@@ -10,10 +10,6 @@ public class MazeTileManager {
     public static final int TILE_SIZE = 32;
 
     // Maze layout
-    // W = wall
-    // . = floor
-    // S = sign
-    // E = exit
     private final char[][] maze = {
             "WWWWWWWWWWWWWW".toCharArray(),
             "W..S.......E.W".toCharArray(),
@@ -27,12 +23,18 @@ public class MazeTileManager {
             "WWWWWWWWWWWWWW".toCharArray()
     };
 
+    // Fog array (true = revealed)
+    private boolean[][] fogRevealed;
+
     private BufferedImage wallImg;
     private BufferedImage floorImg;
     private BufferedImage signImg;
     private BufferedImage exitImg;
 
     public MazeTileManager() {
+
+        fogRevealed = new boolean[getRows()][getCols()];
+
         wallImg  = loadSafe("res/tiles/brick.png", Color.RED);
         floorImg = loadSafe("res/tiles/floor.png", Color.GREEN);
         signImg  = loadSafe("res/tiles/sign.png", Color.YELLOW);
@@ -44,6 +46,7 @@ public class MazeTileManager {
             return ImageIO.read(new File(path));
         } catch (Exception e) {
             System.out.println("⚠ Could not load " + path);
+
             BufferedImage img = new BufferedImage(TILE_SIZE, TILE_SIZE, BufferedImage.TYPE_INT_RGB);
             Graphics2D g = img.createGraphics();
             g.setColor(fallback);
@@ -68,29 +71,48 @@ public class MazeTileManager {
         };
     }
 
+    public void revealTile(int r, int c) {
+        if (r >= 0 && r < getRows() && c >= 0 && c < getCols()) {
+            fogRevealed[r][c] = true;
+        }
+    }
+
+    public boolean isRevealed(int r, int c) {
+        if (r < 0 || c < 0 || r >= getRows() || c >= getCols()) return false;
+        return fogRevealed[r][c];
+    }
+
     public void render(Graphics2D g) {
-    for (int r = 0; r < getRows(); r++) {
-        for (int c = 0; c < getCols(); c++) {
 
-            TileType type = getTile(r, c);
-            BufferedImage sprite = switch (type) {
-                case WALL -> wallImg;
-                case SIGN -> signImg;
-                case EXIT -> exitImg;
-                default -> floorImg;
-            };
+        for (int r = 0; r < getRows(); r++) {
+            for (int c = 0; c < getCols(); c++) {
 
-            g.drawImage(
-                    sprite,
-                    c * TILE_SIZE,
-                    r * TILE_SIZE,
-                    TILE_SIZE,    // FORCE width to 32
-                    TILE_SIZE,    // FORCE height to 32
-                    null
-            );
+                TileType type = getTile(r, c);
+                BufferedImage sprite = switch (type) {
+                    case WALL -> wallImg;
+                    case SIGN -> signImg;
+                    case EXIT -> exitImg;
+                    default -> floorImg;
+                };
+
+                boolean revealed = fogRevealed[r][c];
+
+                // EXIT is always visible
+                if (type == TileType.EXIT) {
+                    revealed = true;
+                }
+
+                if (revealed) {
+                    // Normal rendering
+                    g.drawImage(sprite, c * TILE_SIZE, r * TILE_SIZE,
+                            TILE_SIZE, TILE_SIZE, null);
+                } else {
+                    // FULL FOG (pitch black tile)
+                    g.setColor(Color.BLACK);
+                    g.fillRect(c * TILE_SIZE, r * TILE_SIZE,
+                            TILE_SIZE, TILE_SIZE);
+                }
+            }
         }
     }
 }
-
-}
-

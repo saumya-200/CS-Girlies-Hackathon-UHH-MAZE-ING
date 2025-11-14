@@ -19,6 +19,7 @@ public class Level1Screen extends JPanel {
 
         setPreferredSize(new Dimension(800, 600));
         setBackground(Color.BLACK);
+        setFocusable(true);
 
         maze = new MazeTileManager();
 
@@ -28,14 +29,19 @@ public class Level1Screen extends JPanel {
 
         setupInput();
 
+        revealAroundPlayer(); // reveal starting area
+
         Timer timer = new Timer(16, e -> gameUpdate());
         timer.start();
     }
 
-    private void setupInput() {
-        setFocusable(true);
-        requestFocusInWindow();
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        requestFocusInWindow();   // ENSURE focus once added to frame
+    }
 
+    private void setupInput() {
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -50,10 +56,25 @@ public class Level1Screen extends JPanel {
     }
 
     private void gameUpdate() {
+        requestFocusInWindow(); // KEEP focus every frame
+
         player.update(0.016, maze);
+        revealAroundPlayer();
         checkSignCollision();
         checkExit();
         repaint();
+    }
+
+    private void revealAroundPlayer() {
+        Rectangle pb = player.getBounds();
+        int r = pb.y / MazeTileManager.TILE_SIZE;
+        int c = pb.x / MazeTileManager.TILE_SIZE;
+
+        maze.revealTile(r, c);
+        maze.revealTile(r - 1, c);
+        maze.revealTile(r + 1, c);
+        maze.revealTile(r, c - 1);
+        maze.revealTile(r, c + 1);
     }
 
     private void checkSignCollision() {
@@ -87,7 +108,7 @@ public class Level1Screen extends JPanel {
         player.render(g);
 
         if (showSignMessage) {
-            g.setColor(new Color(0, 0, 0, 180));
+            g.setColor(new Color(0, 0, 0, 200));
             g.fillRoundRect(100, 450, 600, 120, 20, 20);
 
             g.setColor(Color.WHITE);
