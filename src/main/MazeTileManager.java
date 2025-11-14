@@ -7,9 +7,7 @@ import java.io.File;
 
 public class MazeTileManager {
 
-    public static final int TILE_SIZE = 32;
-
-    // Maze layout
+    public static final int TILE_SIZE = 32; // logical tile size (pixels in logic)
     private final char[][] maze = {
             "WWWWWWWWWWWWWW".toCharArray(),
             "W..S.......E.W".toCharArray(),
@@ -23,8 +21,8 @@ public class MazeTileManager {
             "WWWWWWWWWWWWWW".toCharArray()
     };
 
-    // Fog array (true = revealed)
-    private boolean[][] fogRevealed;
+    // fogRevealed[r][c] == true means tile is discovered
+    private final boolean[][] fogRevealed;
 
     private BufferedImage wallImg;
     private BufferedImage floorImg;
@@ -32,21 +30,20 @@ public class MazeTileManager {
     private BufferedImage exitImg;
 
     public MazeTileManager() {
-
         fogRevealed = new boolean[getRows()][getCols()];
-
-        wallImg  = loadSafe("res/tiles/brick.png", Color.RED);
-        floorImg = loadSafe("res/tiles/floor.png", Color.GREEN);
-        signImg  = loadSafe("res/tiles/sign.png", Color.YELLOW);
-        exitImg  = loadSafe("res/tiles/exit.png", Color.BLUE);
+        wallImg  = loadSafe("res/tiles/brick.png", Color.DARK_GRAY);
+        floorImg = loadSafe("res/tiles/floor.png", new Color(40, 120, 40));
+        signImg  = loadSafe("res/tiles/sign.png", new Color(150, 100, 40));
+        exitImg  = loadSafe("res/tiles/exit.png", new Color(100, 100, 200));
     }
 
     private BufferedImage loadSafe(String path, Color fallback) {
         try {
-            return ImageIO.read(new File(path));
+            BufferedImage img = ImageIO.read(new File(path));
+            if (img == null) throw new Exception("ImageIO returned null");
+            return img;
         } catch (Exception e) {
-            System.out.println("⚠ Could not load " + path);
-
+            System.out.println("⚠ Could not load " + path + " — using fallback color.");
             BufferedImage img = new BufferedImage(TILE_SIZE, TILE_SIZE, BufferedImage.TYPE_INT_RGB);
             Graphics2D g = img.createGraphics();
             g.setColor(fallback);
@@ -61,7 +58,6 @@ public class MazeTileManager {
 
     public TileType getTile(int r, int c) {
         if (r < 0 || c < 0 || r >= getRows() || c >= getCols()) return TileType.WALL;
-
         char ch = maze[r][c];
         return switch (ch) {
             case 'W' -> TileType.WALL;
@@ -82,35 +78,42 @@ public class MazeTileManager {
         return fogRevealed[r][c];
     }
 
-    public void render(Graphics2D g) {
-
+    /**
+     * Render the maze using separate horizontal and vertical scales (scaleX, scaleY).
+     * This allows filling the entire panel (non-uniform stretch).
+     *
+     * @param g graphics context
+     * @param scaleX horizontal scale factor
+     * @param scaleY vertical scale factor
+     */
+    public void render(Graphics2D g, double scaleX, double scaleY) {
         for (int r = 0; r < getRows(); r++) {
             for (int c = 0; c < getCols(); c++) {
 
                 TileType type = getTile(r, c);
-                BufferedImage sprite = switch (type) {
+                BufferedImage img = switch (type) {
                     case WALL -> wallImg;
                     case SIGN -> signImg;
                     case EXIT -> exitImg;
                     default -> floorImg;
                 };
 
-                boolean revealed = fogRevealed[r][c];
+                int drawX = (int) Math.round(c * TILE_SIZE * scaleX);
+                int drawY = (int) Math.round(r * TILE_SIZE * scaleY);
+                int drawW = (int) Math.round(TILE_SIZE * scaleX);
+                int drawH = (int) Math.round(TILE_SIZE * scaleY);
 
-                // EXIT is always visible
-                if (type == TileType.EXIT) {
-                    revealed = true;
-                }
+                boolean revealed = isRevealed(r, c);
+
+                // Exit is always visible
+                if (type == TileType.EXIT) revealed = true;
 
                 if (revealed) {
-                    // Normal rendering
-                    g.drawImage(sprite, c * TILE_SIZE, r * TILE_SIZE,
-                            TILE_SIZE, TILE_SIZE, null);
+                    g.drawImage(img, drawX, drawY, drawW, drawH, null);
                 } else {
-                    // FULL FOG (pitch black tile)
+                    // full black tile for true fog
                     g.setColor(Color.BLACK);
-                    g.fillRect(c * TILE_SIZE, r * TILE_SIZE,
-                            TILE_SIZE, TILE_SIZE);
+                    g.fillRect(drawX, drawY, drawW, drawH);
                 }
             }
         }
