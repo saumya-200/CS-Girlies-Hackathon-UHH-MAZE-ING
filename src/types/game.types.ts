@@ -63,12 +63,19 @@ export interface PathMemory {
   visitedTiles: Set<string>; // "x,y" format
 }
 
+export interface LoadingState {
+  isLoadingContent: boolean;
+  isLoadingQuestions: boolean;
+  loadingMessage: string;
+}
+
 export interface GameState {
   currentLevelId: string;
   player: PlayerState;
   maze: MazeGrid | null;
   fog: FogState;
   path: PathMemory;
+  loading: LoadingState;
   isPaused: boolean;
   isGameOver: boolean;
   levelStartTime: number;

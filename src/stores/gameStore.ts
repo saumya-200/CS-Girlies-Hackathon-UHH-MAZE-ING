@@ -8,7 +8,7 @@ import { GAME_CONFIG } from '../utils/constants';
 interface GameActions {
   // Maze operations
   setMaze: (maze: MazeGrid | null) => void;
-  
+
   // Player operations
   movePlayer: (direction: 'up' | 'down' | 'left' | 'right') => void;
   setPlayerPosition: (position: Coordinate) => void;
@@ -17,15 +17,19 @@ interface GameActions {
   loseLife: () => void;
   collectKey: () => void;
   answerQuizTile: (x: number, y: number, correct: boolean) => void;
-  
+
+  // Loading operations
+  setLoadingContent: (isLoading: boolean, message?: string) => void;
+  setLoadingQuestions: (isLoading: boolean, message?: string) => void;
+
   // Fog operations
   revealTile: (coord: Coordinate) => void;
   updateFogOpacity: (coord: Coordinate, opacity: number) => void;
-  
+
   // Path operations
   addToPath: (coord: Coordinate) => void;
   clearPath: () => void;
-  
+
   // Game flow
   startLevel: (levelId: string) => void;
   pauseGame: () => void;
@@ -54,6 +58,11 @@ const initialState: GameState = {
   path: {
     visitedPath: [],
     visitedTiles: new Set<string>(),
+  },
+  loading: {
+    isLoadingContent: false,
+    isLoadingQuestions: false,
+    loadingMessage: '',
   },
   isPaused: false,
   isGameOver: false,
@@ -261,6 +270,25 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
   pauseGame: () => set({ isPaused: true }),
 
   resumeGame: () => set({ isPaused: false }),
+
+  // Loading operations
+  setLoadingContent: (isLoading, message = 'Loading content...') =>
+    set((state) => ({
+      loading: {
+        ...state.loading,
+        isLoadingContent: isLoading,
+        loadingMessage: isLoading ? message : '',
+      },
+    })),
+
+  setLoadingQuestions: (isLoading, message = 'Loading questions...') =>
+    set((state) => ({
+      loading: {
+        ...state.loading,
+        isLoadingQuestions: isLoading,
+        loadingMessage: isLoading ? message : '',
+      },
+    })),
 
   endGame: () => set({ isGameOver: true }),
 

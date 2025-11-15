@@ -234,11 +234,11 @@ export function validateMaze(maze: MazeGrid): boolean {
 }
 
 /**
- * Generate a stream selection maze - SIMPLE CROSS DESIGN
- * 4 cardinal directions + 2 L-shaped paths
+ * Generate a topic selection maze - SIMPLE CROSS DESIGN
+ * 4 cardinal directions + 2 L-shaped paths for ML topics
  */
-export function generateStreamSelectionMaze(
-  streams: Array<{ id: string; name: string; icon: string; color: string }>
+export function generateTopicSelectionMaze(
+  topics: Array<{ id: string; name: string; icon: string; color: string }>
 ): MazeGrid {
   const width = 41;
   const height = 31;
@@ -328,12 +328,12 @@ export function generateStreamSelectionMaze(
   const endpoints = [ep1, ep2, ep3, ep4, ep5, ep6];
   
   endpoints.forEach((ep, i) => {
-    if (i < streams.length) {
+    if (i < topics.length) {
       tiles[ep.y][ep.x] = {
         type: TileType.STREAM_ENDPOINT,
         coordinate: { x: ep.x, y: ep.y },
-        streamId: streams[i].id,
-        label: `${streams[i].icon} ${streams[i].name}`,
+        streamId: topics[i].id,
+        label: `${topics[i].icon} ${topics[i].name}`,
       };
     }
   });
