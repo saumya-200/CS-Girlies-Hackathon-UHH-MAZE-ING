@@ -24,7 +24,7 @@ class GeminiService {
   /**
    * Generate learning content for a specific topic and level
    */
-  static async fetchLearningContent(topic: string, levelNumber: number): Promise<string> {
+  static async fetchLearningContent(topic: string, levelNumber: number, language: string = 'en'): Promise<string> {
     const cacheKey = `learning_${topic}_${levelNumber}`;
 
     // Check cache first

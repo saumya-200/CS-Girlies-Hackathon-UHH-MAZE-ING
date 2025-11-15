@@ -1,6 +1,7 @@
 // Quiz modal component for displaying questions
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Question } from '../../types/content.types';
 
 interface QuizModalProps {
@@ -12,14 +13,16 @@ interface QuizModalProps {
   totalQuestions?: number;
 }
 
-export function QuizModal({ 
-  question, 
-  onAnswer, 
-  onClose, 
+export function QuizModal({
+  question,
+  onAnswer,
+  onClose,
   isVisible,
   currentQuestionNumber = 1,
   totalQuestions = 1,
 }: QuizModalProps) {
+  const { t } = useTranslation();
+
   // Use question.id as key to auto-reset state
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [userAnswer, setUserAnswer] = useState('');
@@ -112,11 +115,11 @@ export function QuizModal({
                   {question.topic}
                 </span>
                 <span className="text-xs text-gray-500">
-                  Difficulty: {question.difficulty}/5
+                  {t('quiz.difficulty', { level: question.difficulty })}
                 </span>
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                Question
+                {t('quiz.questionLabel')}
               </h2>
             </div>
 
@@ -131,19 +134,36 @@ export function QuizModal({
             <div className="mb-6">
               {question.type === 'multiple_choice' && question.options && (
                 <div className="space-y-3">
-                  {question.options.map((option, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedAnswer(option)}
-                      className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                        selectedAnswer === option
-                          ? 'border-primary-500 bg-primary-500 bg-opacity-20'
-                          : 'border-gray-600 hover:border-gray-500 bg-gray-700 bg-opacity-30'
-                      }`}
-                    >
-                      <span className="text-gray-200">{option}</span>
-                    </button>
-                  ))}
+                  {question.options.map((option, index) => {
+                    const isSelected = selectedAnswer === option;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedAnswer(option)}
+                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 transform ${
+                          isSelected
+                            ? 'border-blue-500 bg-blue-500 bg-opacity-20 scale-105 shadow-lg'
+                            : 'border-gray-600 hover:border-gray-500 bg-gray-700 bg-opacity-30 hover:scale-102'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={`text-lg ${
+                            isSelected ? 'text-white font-semibold' : 'text-gray-200'
+                          }`}>
+                            {option}
+                          </span>
+                          {isSelected && (
+                            <div className="text-blue-400 text-xl">✓</div>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <div className="mt-2 text-sm text-blue-300">
+                            Selected option
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 

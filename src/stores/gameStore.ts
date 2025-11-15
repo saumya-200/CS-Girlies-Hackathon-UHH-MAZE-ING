@@ -6,6 +6,9 @@ import { TileType } from '../types/game.types';
 import { GAME_CONFIG } from '../utils/constants';
 
 interface GameActions {
+  // Character operations
+  setCharacterName: (name: string) => void;
+
   // Maze operations
   setMaze: (maze: MazeGrid | null) => void;
 
@@ -49,6 +52,7 @@ const initialPlayerState = {
 
 const initialState: GameState = {
   currentLevelId: '',
+  characterName: localStorage.getItem('characterName') || null,
   player: initialPlayerState,
   maze: null,
   fog: {
@@ -71,6 +75,12 @@ const initialState: GameState = {
 
 export const useGameStore = create<GameState & GameActions>((set, get) => ({
   ...initialState,
+
+  // Character operations
+  setCharacterName: (name: string) => {
+    localStorage.setItem('characterName', name);
+    set({ characterName: name });
+  },
 
   // Maze operations
   setMaze: (maze) => set({ maze }),

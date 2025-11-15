@@ -71,6 +71,7 @@ export interface LoadingState {
 
 export interface GameState {
   currentLevelId: string;
+  characterName: string | null;
   player: PlayerState;
   maze: MazeGrid | null;
   fog: FogState;

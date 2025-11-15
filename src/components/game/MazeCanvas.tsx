@@ -9,6 +9,23 @@ export function MazeCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { maze, player, fog, path } = useGameStore();
 
+  // Resize canvas to fill container
+  useEffect(() => {
+    const resizeCanvas = () => {
+      if (canvasRef.current) {
+        const container = canvasRef.current.parentElement;
+        if (container) {
+          canvasRef.current.width = Math.min(container.clientWidth, 1200); // Max width
+          canvasRef.current.height = Math.min(container.clientHeight || 600, 800); // Max height
+        }
+      }
+    };
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    return () => window.removeEventListener('resize', resizeCanvas);
+  }, []);
+
   useEffect(() => {
     if (!canvasRef.current || !maze) return;
 
