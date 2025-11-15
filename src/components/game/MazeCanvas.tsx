@@ -1,64 +1,110 @@
 // Main maze rendering component using Canvas
 
-import { useEffect, useRef } from 'react';
-import { useGameStore } from '../../stores/gameStore';
-import { GAME_CONFIG, TILE_COLORS, PATH } from '../../utils/constants';
-import { TileType } from '../../types/game.types';
+import { useEffect, useRef } from "react";
+import { useGameStore } from "../../stores/gameStore";
+import { TILE_COLORS, PATH } from "../../utils/constants";
+import { TileType } from "../../types/game.types";
+
+// TEXTURES
+import groundTile from "../../assets/ground/floor.png";
+import waterTile from "../../assets/water/water.png";
+import playerSprite from "../../assets/player/character.png";
 
 export function MazeCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { maze, player, fog, path } = useGameStore();
 
-  // Resize canvas to fill container
-  useEffect(() => {
-    const resizeCanvas = () => {
-      if (canvasRef.current) {
-        const container = canvasRef.current.parentElement;
-        if (container) {
-          canvasRef.current.width = Math.min(container.clientWidth, 1200); // Max width
-          canvasRef.current.height = Math.min(container.clientHeight || 600, 800); // Max height
-        }
-      }
-    };
+  const groundImageRef = useRef<HTMLImageElement | null>(null);
+  const waterImageRef = useRef<HTMLImageElement | null>(null);
+  const playerImageRef = useRef<HTMLImageElement | null>(null);
 
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
+  // Load textures once
+  useEffect(() => {
+    const groundImg = new Image();
+    groundImg.src = groundTile;
+    groundImg.onload = () => (groundImageRef.current = groundImg);
+
+    const waterImg = new Image();
+    waterImg.src = waterTile;
+    waterImg.onload = () => (waterImageRef.current = waterImg);
+
+    const playerImg = new Image();
+    playerImg.src = playerSprite;
+    playerImg.onload = () => (playerImageRef.current = playerImg);
   }, []);
 
   useEffect(() => {
     if (!canvasRef.current || !maze) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    // match canvas pixels to CSS size * dpr for crisp rendering
+    if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+    }
+
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Clear canvas
-    ctx.fillStyle = '#111827'; // gray-900
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // work in CSS pixels
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const tileSize = GAME_CONFIG.tileSize;
+    const width = rect.width;
+    const height = rect.height;
 
-    // Calculate visible area around player
-    const viewportTilesX = Math.floor(canvas.width / tileSize);
-    const viewportTilesY = Math.floor(canvas.height / tileSize);
-    const centerX = Math.floor(viewportTilesX / 2);
-    const centerY = Math.floor(viewportTilesY / 2);
+    // viewport in tiles (controls zoom)
+    const VIEW_TILES_X = 25;
+    const VIEW_TILES_Y = 18;
 
-    const startX = Math.max(0, player.position.x - centerX);
-    const startY = Math.max(0, player.position.y - centerY);
-    const endX = Math.min(maze.width, startX + viewportTilesX);
-    const endY = Math.min(maze.height, startY + viewportTilesY);
+    const tileSize = Math.floor(
+      Math.min(width / VIEW_TILES_X, height / VIEW_TILES_Y)
+    );
 
-    // Draw tiles
+    // full background = pure black
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, width, height);
+
+    if (tileSize <= 0) return;
+
+    // camera follow player, clamped
+    const halfX = Math.floor(VIEW_TILES_X / 2);
+    const halfY = Math.floor(VIEW_TILES_Y / 2);
+
+    let startX = player.position.x - halfX;
+    let startY = player.position.y - halfY;
+
+    if (startX < 0) startX = 0;
+    if (startY < 0) startY = 0;
+    if (startX + VIEW_TILES_X > maze.width)
+      startX = Math.max(0, maze.width - VIEW_TILES_X);
+    if (startY + VIEW_TILES_Y > maze.height)
+      startY = Math.max(0, maze.height - VIEW_TILES_Y);
+
+    const endX = Math.min(maze.width, startX + VIEW_TILES_X);
+    const endY = Math.min(maze.height, startY + VIEW_TILES_Y);
+
+    const visibleWidthTiles = endX - startX;
+    const visibleHeightTiles = endY - startY;
+
+    const gridWidthPx = visibleWidthTiles * tileSize;
+    const gridHeightPx = visibleHeightTiles * tileSize;
+
+    const groundImg = groundImageRef.current;
+    const waterImg = waterImageRef.current;
+
+    // ===== DRAW TILES =====
     for (let y = startY; y < endY; y++) {
       for (let x = startX; x < endX; x++) {
         const screenX = (x - startX) * tileSize;
         const screenY = (y - startY) * tileSize;
+
         const tile = maze.tiles[y][x];
         const key = `${x},${y}`;
 
-        // Determine tile color
         let color = TILE_COLORS.WALL;
         switch (tile.type) {
           case TileType.WALL:
@@ -68,7 +114,6 @@ export function MazeCanvas() {
             color = TILE_COLORS.PATH;
             break;
           case TileType.QUIZ:
-            // Use new isAnswered property
             if (tile.isAnswered && tile.answeredCorrectly) {
               color = TILE_COLORS.QUIZ_CORRECT;
             } else if (tile.isAnswered && !tile.answeredCorrectly) {
@@ -84,192 +129,207 @@ export function MazeCanvas() {
             color = TILE_COLORS.GOAL;
             break;
           case TileType.STREAM_ENDPOINT:
-            color = '#8b5cf6'; // purple
+            color = "#8b5cf6";
             break;
           case TileType.LEVEL_CHECKPOINT:
-            color = '#10b981'; // green - unlocked
+            color = "#10b981";
             break;
           case TileType.LOCKED_CHECKPOINT:
-            color = '#6b7280'; // gray - locked
+            color = "#6b7280";
             break;
         }
 
-        // Draw tile
-        ctx.fillStyle = color;
-        ctx.fillRect(screenX, screenY, tileSize, tileSize);
+        if (tile.type === TileType.PATH && groundImg && groundImg.complete) {
+          ctx.drawImage(groundImg, screenX, screenY, tileSize, tileSize);
+        } else if (tile.type === TileType.WALL && waterImg && waterImg.complete) {
+          ctx.drawImage(waterImg, screenX, screenY, tileSize, tileSize);
+        } else {
+          ctx.fillStyle = color;
+          ctx.fillRect(screenX, screenY, tileSize, tileSize);
+        }
 
-        // Draw grid lines
-        ctx.strokeStyle = '#1f2937';
+        // grid lines
+        ctx.strokeStyle = "#1f2937";
         ctx.strokeRect(screenX, screenY, tileSize, tileSize);
 
-        // Draw fog of war
+        // ===== FOG =====
         if (!fog.revealedTiles.has(key)) {
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+          // unrevealed = pure black
+          ctx.fillStyle = "rgba(0,0,0,1)";
           ctx.fillRect(screenX, screenY, tileSize, tileSize);
         } else {
-          const opacity = fog.fogOpacity[key] || 0;
+          const opacity = fog.fogOpacity[key] ?? 0;
           if (opacity > 0) {
-            ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+            ctx.fillStyle = `rgba(0,0,0,${opacity})`;
             ctx.fillRect(screenX, screenY, tileSize, tileSize);
           }
-          
-          // Draw quiz tile icons (only if revealed and fog is clear)
-          if (tile.type === TileType.QUIZ && opacity < 0.3) {
-            ctx.save();
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 24px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            if (tile.isAnswered) {
-              // Draw checkmark or X
-              const icon = tile.answeredCorrectly ? '✓' : '✗';
+
+          // icons when mostly visible
+          if (opacity < 0.3) {
+            if (tile.type === TileType.QUIZ) {
+              ctx.save();
+              ctx.fillStyle = "#ffffff";
+              ctx.font = "bold 24px sans-serif";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              const icon = tile.isAnswered
+                ? tile.answeredCorrectly
+                  ? "✓"
+                  : "✗"
+                : "?";
               ctx.fillText(icon, screenX + tileSize / 2, screenY + tileSize / 2);
-            } else {
-              // Draw question mark
-              ctx.fillText('?', screenX + tileSize / 2, screenY + tileSize / 2);
+              ctx.restore();
             }
-            ctx.restore();
-          }
-          
-          // Draw lock/unlock icon on goal tile (only if revealed)
-          if (tile.type === TileType.GOAL && opacity < 0.3) {
-            ctx.save();
-            ctx.font = 'bold 28px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            const requiredKeys = 3;
-            const hasEnoughKeys = player.keysCollected >= requiredKeys;
-            
-            if (hasEnoughKeys) {
-              // Unlocked - show open lock or checkmark
-              ctx.fillStyle = '#10b981'; // green
-              ctx.fillText('🔓', screenX + tileSize / 2, screenY + tileSize / 2);
-            } else {
-              // Locked - show closed lock
-              ctx.fillStyle = '#ffffff';
-              ctx.fillText('🔒', screenX + tileSize / 2, screenY + tileSize / 2);
-              
-              // Show required keys text
-              ctx.font = 'bold 14px sans-serif';
-              ctx.fillStyle = '#fbbf24'; // yellow
-              ctx.fillText(`${player.keysCollected}/${requiredKeys}`, screenX + tileSize / 2, screenY + tileSize - 8);
+
+            if (tile.type === TileType.GOAL) {
+              ctx.save();
+              ctx.font = "bold 28px sans-serif";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+
+              const requiredKeys = 3;
+              const hasEnoughKeys = player.keysCollected >= requiredKeys;
+
+              if (hasEnoughKeys) {
+                ctx.fillStyle = "#10b981";
+                ctx.fillText("🔓", screenX + tileSize / 2, screenY + tileSize / 2);
+              } else {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("🔒", screenX + tileSize / 2, screenY + tileSize / 2);
+                ctx.font = "bold 14px sans-serif";
+                ctx.fillStyle = "#fbbf24";
+                ctx.fillText(
+                  `${player.keysCollected}/${requiredKeys}`,
+                  screenX + tileSize / 2,
+                  screenY + tileSize - 8
+                );
+              }
+              ctx.restore();
             }
-            ctx.restore();
-          }
-          
-          // Draw stream endpoint labels
-          if (tile.type === TileType.STREAM_ENDPOINT && opacity < 0.3) {
-            ctx.save();
-            ctx.font = 'bold 32px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#ffffff';
-            
-            // Extract icon from label (first emoji)
-            const icon = tile.label?.split(' ')[0] || '📚';
-            ctx.fillText(icon, screenX + tileSize / 2, screenY + tileSize / 2);
-            ctx.restore();
-          }
-          
-          // Draw checkpoint labels
-          if ((tile.type === TileType.LEVEL_CHECKPOINT || tile.type === TileType.LOCKED_CHECKPOINT) && opacity < 0.3) {
-            ctx.save();
-            ctx.font = 'bold 28px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            if (tile.isLocked) {
-              // Locked checkpoint
-              ctx.fillStyle = '#ffffff';
-              ctx.fillText('🔒', screenX + tileSize / 2, screenY + tileSize / 2);
-              
-              // Show label below
-              ctx.font = 'bold 12px sans-serif';
-              ctx.fillStyle = '#9ca3af'; // gray
-              const labelText = tile.label?.split(' ')[1] || tile.difficulty || '';
-              ctx.fillText(labelText, screenX + tileSize / 2, screenY + tileSize - 6);
-            } else {
-              // Unlocked checkpoint
-              ctx.fillStyle = '#ffffff';
-              const icon = tile.label?.split(' ')[0] || '✓';
+
+            if (tile.type === TileType.STREAM_ENDPOINT) {
+              ctx.save();
+              ctx.font = "bold 32px sans-serif";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillStyle = "#ffffff";
+              const icon = tile.label?.split(" ")[0] || "📚";
               ctx.fillText(icon, screenX + tileSize / 2, screenY + tileSize / 2);
-              
-              // Show label below
-              ctx.font = 'bold 12px sans-serif';
-              ctx.fillStyle = '#d1fae5'; // light green
-              const labelText = tile.label?.split(' ')[1] || tile.difficulty || '';
-              ctx.fillText(labelText, screenX + tileSize / 2, screenY + tileSize - 6);
+              ctx.restore();
             }
-            ctx.restore();
           }
         }
       }
     }
 
-    // Draw path memory trail
+    // ===== PATH TRAIL (clipped to maze grid) =====
     if (path.visitedPath.length > 1) {
-      ctx.strokeStyle = PATH.TRAIL_COLOR;
-      ctx.lineWidth = PATH.TRAIL_WIDTH;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      ctx.save();
+
+      // clip to actual maze area so trail never goes outside grid
+      ctx.beginPath();
+      ctx.rect(0, 0, gridWidthPx, gridHeightPx);
+      ctx.clip();
+
+      ctx.lineWidth = PATH.TRAIL_WIDTH * (tileSize / 40);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      const first = path.visitedPath[0];
+      const firstX = (first.x - startX) * tileSize + tileSize / 2;
+      const firstY = (first.y - startY) * tileSize + tileSize / 2;
+
+      const last = path.visitedPath[path.visitedPath.length - 1];
+      const lastX = (last.x - startX) * tileSize + tileSize / 2;
+      const lastY = (last.y - startY) * tileSize + tileSize / 2;
+
+      const gradient = ctx.createLinearGradient(firstX, firstY, lastX, lastY);
+      gradient.addColorStop(0, "#3b82f6");
+      gradient.addColorStop(1, "#f9a8d4");
+      ctx.strokeStyle = gradient;
 
       ctx.beginPath();
-      const firstPoint = path.visitedPath[0];
-      const firstScreenX = (firstPoint.x - startX) * tileSize + tileSize / 2;
-      const firstScreenY = (firstPoint.y - startY) * tileSize + tileSize / 2;
-      ctx.moveTo(firstScreenX, firstScreenY);
-
+      ctx.moveTo(firstX, firstY);
       for (let i = 1; i < path.visitedPath.length; i++) {
-        const point = path.visitedPath[i];
-        const screenX = (point.x - startX) * tileSize + tileSize / 2;
-        const screenY = (point.y - startY) * tileSize + tileSize / 2;
-        ctx.lineTo(screenX, screenY);
+        const p = path.visitedPath[i];
+        const sx = (p.x - startX) * tileSize + tileSize / 2;
+        const sy = (p.y - startY) * tileSize + tileSize / 2;
+        ctx.lineTo(sx, sy);
       }
       ctx.stroke();
+
+      // sparkles
+      for (let i = 0; i < path.visitedPath.length; i += 2) {
+        const p = path.visitedPath[i];
+        const sx = (p.x - startX) * tileSize + tileSize / 2;
+        const sy = (p.y - startY) * tileSize + tileSize / 2;
+
+        ctx.save();
+        ctx.fillStyle = "rgba(255,255,255,0.95)";
+        ctx.shadowColor = "rgba(255,255,255,0.95)";
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(sx, sy, tileSize * 0.08, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.restore();
     }
 
-    // Draw player
-    const playerScreenX = (player.position.x - startX) * tileSize;
-    const playerScreenY = (player.position.y - startY) * tileSize;
-    const playerSize = tileSize * 0.7;
+    // ===== PLAYER SPRITE =====
+    const playerImg = playerImageRef.current;
+    const playerSize = tileSize * 0.8;
+    const playerScreenX =
+      (player.position.x - startX) * tileSize + (tileSize - playerSize) / 2;
+    const playerScreenY =
+      (player.position.y - startY) * tileSize + (tileSize - playerSize) / 2;
 
-    ctx.fillStyle = '#3b82f6'; // blue-500
-    ctx.beginPath();
-    ctx.arc(
-      playerScreenX + tileSize / 2,
-      playerScreenY + tileSize / 2,
-      playerSize / 2,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
+    if (playerImg && playerImg.complete) {
+      ctx.drawImage(playerImg, playerScreenX, playerScreenY, playerSize, playerSize);
+    } else {
+      ctx.fillStyle = "#3b82f6";
+      ctx.beginPath();
+      ctx.arc(
+        playerScreenX + playerSize / 2,
+        playerScreenY + playerSize / 2,
+        playerSize / 2,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
 
-    // Draw player direction indicator
-    ctx.fillStyle = '#60a5fa'; // blue-400
-    const indicatorSize = playerSize / 4;
-    let indicatorX = playerScreenX + tileSize / 2;
-    let indicatorY = playerScreenY + tileSize / 2;
+    // direction glow
+    const centerX = playerScreenX + playerSize / 2;
+    const centerY = playerScreenY + playerSize / 2;
+    let glowX = centerX;
+    let glowY = centerY;
+    const offset = playerSize / 3;
 
     switch (player.direction) {
-      case 'up':
-        indicatorY -= playerSize / 3;
+      case "up":
+        glowY -= offset;
         break;
-      case 'down':
-        indicatorY += playerSize / 3;
+      case "down":
+        glowY += offset;
         break;
-      case 'left':
-        indicatorX -= playerSize / 3;
+      case "left":
+        glowX -= offset;
         break;
-      case 'right':
-        indicatorX += playerSize / 3;
+      case "right":
+        glowX += offset;
         break;
     }
 
+    ctx.save();
+    ctx.fillStyle = "rgba(248,250,252,0.95)";
+    ctx.shadowColor = "rgba(251,113,133,0.8)";
+    ctx.shadowBlur = 12;
     ctx.beginPath();
-    ctx.arc(indicatorX, indicatorY, indicatorSize, 0, Math.PI * 2);
+    ctx.arc(glowX, glowY, playerSize * 0.12, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
   }, [maze, player, fog, path]);
 
   if (!maze) {
@@ -280,12 +340,5 @@ export function MazeCanvas() {
     );
   }
 
-  return (
-    <canvas
-      ref={canvasRef}
-      width={800}
-      height={600}
-      className="border-2 border-gray-700 rounded-lg"
-    />
-  );
+  return <canvas ref={canvasRef} className="w-full h-full" />;
 }

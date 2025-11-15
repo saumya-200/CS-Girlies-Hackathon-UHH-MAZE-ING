@@ -1,8 +1,9 @@
 // Quiz modal component for displaying questions
+// Now used as an INLINE question panel above the maze (no full-screen overlay)
 
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { Question } from '../../types/content.types';
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { Question } from "../../types/content.types";
 
 interface QuizModalProps {
   question: Question;
@@ -24,8 +25,8 @@ export function QuizModal({
   const { t } = useTranslation();
 
   // Use question.id as key to auto-reset state
-  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
-  const [userAnswer, setUserAnswer] = useState('');
+  const [selectedAnswer, setSelectedAnswer] = useState<string>("");
+  const [userAnswer, setUserAnswer] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [showResult, setShowResult] = useState(false);
@@ -35,8 +36,8 @@ export function QuizModal({
   // Reset when question changes
   if (currentQuestionId !== question.id) {
     setCurrentQuestionId(question.id);
-    setSelectedAnswer('');
-    setUserAnswer('');
+    setSelectedAnswer("");
+    setUserAnswer("");
     setAttempts(0);
     setShowHint(false);
     setShowResult(false);
@@ -51,23 +52,20 @@ export function QuizModal({
 
     let correct = false;
 
-    // Check answer based on question type
-    if (question.type === 'multiple_choice') {
-      // For multiple choice, correctAnswer is an index, so find the index of selected option
+    if (question.type === "multiple_choice") {
       const selectedIndex = question.options?.indexOf(selectedAnswer) ?? -1;
       correct = selectedIndex === question.correctAnswer;
-    } else if (question.type === 'short_answer') {
-      // Case-insensitive comparison, trim whitespace
+    } else if (question.type === "short_answer") {
       const correctAnswerStr = String(question.correctAnswer);
-      correct = userAnswer.trim().toLowerCase() === correctAnswerStr.toLowerCase();
-    } else if (question.type === 'true_false') {
+      correct =
+        userAnswer.trim().toLowerCase() === correctAnswerStr.toLowerCase();
+    } else if (question.type === "true_false") {
       correct = selectedAnswer === question.correctAnswer;
     }
 
     setIsCorrect(correct);
     setShowResult(true);
 
-    // Auto-close and report after showing result
     setTimeout(() => {
       onAnswer(correct, newAttempts);
       onClose();
@@ -79,211 +77,225 @@ export function QuizModal({
   };
 
   const canSubmit = () => {
-    if (question.type === 'short_answer') {
+    if (question.type === "short_answer") {
       return userAnswer.trim().length > 0;
     }
     return selectedAnswer.length > 0;
   };
 
   return (
-    <>
-      {/* Backdrop */}
-      <div className="modal-overlay" aria-hidden="true" />
-
-      {/* Modal */}
-      <div className="modal-content max-w-xl" role="dialog" aria-modal="true">
-        {!showResult ? (
-          <>
-            {/* Header */}
-            <div className="mb-6">
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <div className="flex justify-between text-sm text-gray-400 mb-2">
-                  <span>Question {currentQuestionNumber} of {totalQuestions}</span>
-                  <span>{Math.round((currentQuestionNumber / totalQuestions) * 100)}%</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${(currentQuestionNumber / totalQuestions) * 100}%` }}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-secondary-400 font-semibold uppercase">
-                  {question.topic}
+    <div className="w-full bg-white border border-gray-300 rounded-xl shadow-xl px-6 py-4 text-gray-900">
+      {!showResult ? (
+        <>
+          {/* Header with progress & meta */}
+          <div className="mb-4">
+            {/* Progress Bar */}
+            <div className="mb-3">
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>
+                  Question {currentQuestionNumber} of {totalQuestions}
                 </span>
-                <span className="text-xs text-gray-500">
-                  {t('quiz.difficulty', { level: question.difficulty })}
+                <span>
+                  {Math.round(
+                    (currentQuestionNumber / totalQuestions) * 100
+                  )}
+                  %
                 </span>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {t('quiz.questionLabel')}
-              </h2>
-            </div>
-
-            {/* Question prompt */}
-            <div className="bg-gray-700 bg-opacity-50 rounded-lg p-4 mb-6">
-              <p className="text-lg text-gray-200 leading-relaxed">
-                {question.prompt}
-              </p>
-            </div>
-
-            {/* Answer options based on type */}
-            <div className="mb-6">
-              {question.type === 'multiple_choice' && question.options && (
-                <div className="space-y-3">
-                  {question.options.map((option, index) => {
-                    const isSelected = selectedAnswer === option;
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedAnswer(option)}
-                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 transform ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-500 bg-opacity-20 scale-105 shadow-lg'
-                            : 'border-gray-600 hover:border-gray-500 bg-gray-700 bg-opacity-30 hover:scale-102'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className={`text-lg ${
-                            isSelected ? 'text-white font-semibold' : 'text-gray-200'
-                          }`}>
-                            {option}
-                          </span>
-                          {isSelected && (
-                            <div className="text-blue-400 text-xl">✓</div>
-                          )}
-                        </div>
-                        {isSelected && (
-                          <div className="mt-2 text-sm text-blue-300">
-                            Selected option
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {question.type === 'short_answer' && (
-                <div>
-                  <input
-                    type="text"
-                    value={userAnswer}
-                    onChange={(e) => setUserAnswer(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && canSubmit() && handleSubmit()}
-                    placeholder="Type your answer here..."
-                    className="w-full p-4 rounded-lg bg-gray-700 border-2 border-gray-600 text-white placeholder-gray-500 focus:border-primary-500 focus:outline-none"
-                    autoFocus
-                  />
-                </div>
-              )}
-
-              {question.type === 'true_false' && (
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setSelectedAnswer('true')}
-                    className={`flex-1 p-6 rounded-lg border-2 transition-all ${
-                      selectedAnswer === 'true'
-                        ? 'border-green-500 bg-green-500 bg-opacity-20'
-                        : 'border-gray-600 hover:border-gray-500 bg-gray-700 bg-opacity-30'
-                    }`}
-                  >
-                    <span className="text-2xl mb-2 block">✓</span>
-                    <span className="text-lg font-semibold text-gray-200">True</span>
-                  </button>
-                  <button
-                    onClick={() => setSelectedAnswer('false')}
-                    className={`flex-1 p-6 rounded-lg border-2 transition-all ${
-                      selectedAnswer === 'false'
-                        ? 'border-red-500 bg-red-500 bg-opacity-20'
-                        : 'border-gray-600 hover:border-gray-500 bg-gray-700 bg-opacity-30'
-                    }`}
-                  >
-                    <span className="text-2xl mb-2 block">✗</span>
-                    <span className="text-lg font-semibold text-gray-200">False</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Hint section */}
-            {question.hint && (
-              <div className="mb-6">
-                {!showHint ? (
-                  <button
-                    onClick={handleHint}
-                    className="text-sm text-blue-400 hover:text-blue-300 underline"
-                  >
-                    💡 Need a hint?
-                  </button>
-                ) : (
-                  <div className="bg-blue-900 bg-opacity-30 border border-blue-500 rounded-lg p-3">
-                    <p className="text-sm text-blue-200">
-                      <strong>Hint:</strong> {question.hint}
-                    </p>
-                  </div>
-                )}
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-emerald-500 to-sky-500 h-2 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${(currentQuestionNumber / totalQuestions) * 100}%`,
+                  }}
+                />
               </div>
-            )}
+            </div>
 
-            {/* Attempts counter */}
-            {attempts > 0 && (
-              <p className="text-sm text-gray-500 mb-4">
-                Attempts: {attempts}
-              </p>
-            )}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold uppercase text-sky-600">
+                {question.topic}
+              </span>
+              <span className="text-[11px] text-gray-500">
+                {t("quiz.difficulty", { level: question.difficulty })}
+              </span>
+            </div>
 
-            {/* Submit button */}
-            <button
-              onClick={handleSubmit}
-              disabled={!canSubmit()}
-              className="btn btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Submit Answer
-            </button>
-          </>
-        ) : (
-          /* Result screen */
-          <div className="text-center py-8">
-            {isCorrect ? (
-              <>
-                <div className="text-6xl mb-4">🎉</div>
-                <h2 className="text-3xl font-bold text-green-400 mb-4">
-                  Correct!
-                </h2>
-                <p className="text-gray-300 mb-6">
-                  {question.explanation}
-                </p>
-                <div className="text-lg text-primary-400">
-                  +{Math.max(100 - (attempts - 1) * 25, 25)} points
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-6xl mb-4">😅</div>
-                <h2 className="text-3xl font-bold text-red-400 mb-4">
-                  Incorrect
-                </h2>
-                <p className="text-gray-300 mb-4">
-                  <strong>Correct answer:</strong> {question.correctAnswer}
-                </p>
-                <p className="text-gray-400 text-sm mb-6">
-                  {question.explanation}
-                </p>
-                <div className="text-lg text-gray-500">
-                  Try again next time!
-                </div>
-              </>
-            )}
-            <p className="text-sm text-gray-500 mt-6">
-              Closing in 3 seconds...
+            <h2 className="text-lg font-bold text-gray-900">
+              {t("quiz.questionLabel")}
+            </h2>
+          </div>
+
+          {/* Question prompt */}
+          <div className="bg-gray-50 rounded-lg border border-gray-200 p-3 mb-4">
+            <p className="text-base text-gray-900 leading-relaxed">
+              {question.prompt}
             </p>
           </div>
-        )}
-      </div>
-    </>
+
+          {/* Answer options based on type */}
+          <div className="mb-4">
+            {question.type === "multiple_choice" && question.options && (
+              <div className="space-y-2">
+                {question.options.map((option, index) => {
+                  const isSelected = selectedAnswer === option;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setSelectedAnswer(option)}
+                      className={`w-full text-left p-3 rounded-lg border transition-all duration-150 ${
+                        isSelected
+                          ? "border-sky-500 bg-sky-50 shadow-sm"
+                          : "border-gray-300 bg-white hover:border-gray-400"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-sm ${
+                            isSelected
+                              ? "text-gray-900 font-semibold"
+                              : "text-gray-800"
+                          }`}
+                        >
+                          {option}
+                        </span>
+                        {isSelected && (
+                          <span className="text-sky-500 text-base">✓</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {question.type === "short_answer" && (
+              <div>
+                <input
+                  type="text"
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && canSubmit() && handleSubmit()
+                  }
+                  placeholder="Type your answer here..."
+                  className="w-full p-3 rounded-lg border border-gray-300 text-sm text-gray-900 placeholder-gray-400 focus:border-sky-500 focus:outline-none"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            {question.type === "true_false" && (
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAnswer("true")}
+                  className={`flex-1 p-4 rounded-lg border text-center transition-all ${
+                    selectedAnswer === "true"
+                      ? "border-emerald-500 bg-emerald-50"
+                      : "border-gray-300 bg-white hover:border-gray-400"
+                  }`}
+                >
+                  <span className="text-xl mb-1 block">✓</span>
+                  <span className="text-sm font-semibold text-gray-800">
+                    True
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAnswer("false")}
+                  className={`flex-1 p-4 rounded-lg border text-center transition-all ${
+                    selectedAnswer === "false"
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300 bg-white hover:border-gray-400"
+                  }`}
+                >
+                  <span className="text-xl mb-1 block">✗</span>
+                  <span className="text-sm font-semibold text-gray-800">
+                    False
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Hint section */}
+          {question.hint && (
+            <div className="mb-3">
+              {!showHint ? (
+                <button
+                  type="button"
+                  onClick={handleHint}
+                  className="text-xs text-sky-600 hover:text-sky-500 underline"
+                >
+                  💡 Need a hint?
+                </button>
+              ) : (
+                <div className="bg-sky-50 border border-sky-200 rounded-lg p-2">
+                  <p className="text-xs text-sky-800">
+                    <strong>Hint:</strong> {question.hint}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Attempts counter */}
+          {attempts > 0 && (
+            <p className="text-xs text-gray-500 mb-2">
+              Attempts: {attempts}
+            </p>
+          )}
+
+          {/* Submit button */}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!canSubmit()}
+            className="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg bg-sky-600 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-sky-700 transition-colors"
+          >
+            Submit Answer
+          </button>
+        </>
+      ) : (
+        // Result screen
+        <div className="text-center py-4">
+          {isCorrect ? (
+            <>
+              <div className="text-4xl mb-2">🎉</div>
+              <h2 className="text-xl font-bold text-emerald-600 mb-2">
+                Correct!
+              </h2>
+              <p className="text-sm text-gray-800 mb-3">
+                {question.explanation}
+              </p>
+              <div className="text-sm text-sky-600 font-semibold">
+                +{Math.max(100 - (attempts - 1) * 25, 25)} points
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-4xl mb-2">😅</div>
+              <h2 className="text-xl font-bold text-red-500 mb-2">
+                Incorrect
+              </h2>
+              <p className="text-sm text-gray-800 mb-2">
+                <strong>Correct answer:</strong> {question.correctAnswer}
+              </p>
+              <p className="text-xs text-gray-600 mb-3">
+                {question.explanation}
+              </p>
+              <div className="text-sm text-gray-500">
+                Try again next time!
+              </div>
+            </>
+          )}
+          <p className="text-xs text-gray-400 mt-3">
+            Closing in 3 seconds...
+          </p>
+        </div>
+      )}
+    </div>
   );
 }

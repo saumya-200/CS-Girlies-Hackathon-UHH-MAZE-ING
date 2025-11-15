@@ -4,7 +4,17 @@
 
 /* Custom base styles */
 body {
+  /* original solid color */
   background-color: #111827;
+
+  /* 🔥 pixel-art background behind everything */
+  /* Adjust path depending on where the image actually lives */
+  background-image: url("./assets/background/background.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
   color: #f3f4f6;
   font-family: system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -14,8 +24,13 @@ body {
   min-height: 100vh;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', system-ui, sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Poppins", system-ui, sans-serif;
   font-weight: 700;
 }
 
@@ -29,8 +44,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn:focus {
-  ring-width: 2px;
-  ring-offset-width: 2px;
+  outline: 2px solid #38bdf8; /* focus ring */
+  outline-offset: 2px;
 }
 
 .btn-primary {
@@ -112,4 +127,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.custom-scrollbar {
+  scrollbar-color: #4b5563 #1f2937;
+  scrollbar-width: thin;
 }

@@ -1,38 +1,32 @@
-/**
- * Quiz Demo Page - Multi-stream quiz with maze-based navigation
- * New flow: Stream selection maze → Level progression maze → Quiz maze
- */
-
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { QuizModal } from './components/modals/QuizModal';
-import { ResultsSummaryModal } from './components/modals/ResultsSummaryModal';
-import { CharacterNamingModal } from './components/modals/CharacterNamingModal';
-import { InstructorTutorialModal } from './components/modals/InstructorTutorialModal';
-import { LevelInstructorModal } from './components/modals/LevelInstructorModal';
-import { SettingsModal } from './components/modals/SettingsModal';
-import { MazeCanvas } from './components/game/MazeCanvas';
-import { MiniMap } from './components/game/MiniMap';
-import { useQuizProgressStore } from './stores/quizProgressStore';
-import { useGameStore } from './stores/gameStore';
-import { useInputHandler } from './hooks/useInputHandler';
-import { ML_TOPICS, type Topic } from './data/questionBank';
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+// NOTE: QuizModal is kept in the codebase but not used visually here
+// import { QuizModal } from "./components/modals/QuizModal";
+import { CharacterNamingModal } from "./components/modals/CharacterNamingModal";
+import { InstructorTutorialModal } from "./components/modals/InstructorTutorialModal";
+import { LevelInstructorModal } from "./components/modals/LevelInstructorModal";
+import { SettingsModal } from "./components/modals/SettingsModal";
+import { MazeCanvas } from "./components/game/MazeCanvas";
+import { MiniMap } from "./components/game/MiniMap";
+import { useQuizProgressStore } from "./stores/quizProgressStore";
+import { useGameStore } from "./stores/gameStore";
+import { useInputHandler } from "./hooks/useInputHandler";
+import { ML_TOPICS, type Topic } from "./data/questionBank";
 import {
   generateMaze,
   placeQuizTiles,
   generateTopicSelectionMaze,
-  generateLevelProgressionMaze
-} from './services/mazeGenerator';
-import GeminiService from './services/geminiService';
-import { LEVEL_SIZES } from './utils/constants';
-import { audioManager } from './utils/audioManager';
-import { TileType } from './types/game.types';
-import type { Question } from './types/content.types';
-import { LoadingModal } from './components/modals/LoadingModal';
+  generateLevelProgressionMaze,
+} from "./services/mazeGenerator";
+import GeminiService from "./services/geminiService";
+import { LEVEL_SIZES } from "./utils/constants";
+import { audioManager } from "./utils/audioManager";
+import { TileType } from "./types/game.types";
+import type { Question } from "./types/content.types";
 
-type MazeMode = 'stream-map' | 'level-map' | 'playing-level' | 'results';
+type MazeMode = "stream-map" | "level-map" | "playing-level" | "results";
 
-export function QuizDemo() {
+export default function QuizDemo() {
   const { t } = useTranslation();
 
   const {
@@ -67,29 +61,32 @@ export function QuizDemo() {
     resetGame,
   } = useGameStore();
 
-  const [mazeMode, setMazeMode] = useState<MazeMode>('stream-map');
+  const [mazeMode, setMazeMode] = useState<MazeMode>("stream-map");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [showQuiz, setShowQuiz] = useState(false);
-  const [currentQuizQuestion, setCurrentQuizQuestion] = useState<Question | null>(null);
-  const [currentQuizTile, setCurrentQuizTile] = useState<{x: number, y: number} | null>(null);
+  const [currentQuizQuestion, setCurrentQuizQuestion] =
+    useState<Question | null>(null);
+  const [currentQuizTile, setCurrentQuizTile] = useState<{ x: number; y: number } | null>(
+    null
+  );
   const [lockedMessage, setLockedMessage] = useState<string | null>(null);
 
-  // Startup flow modals
-  const [showCharacterNaming, setShowCharacterNaming] = useState(!useGameStore.getState().characterName);
+  const [showCharacterNaming, setShowCharacterNaming] = useState(
+    !useGameStore.getState().characterName
+  );
   const [showTutorial, setShowTutorial] = useState(false);
   const [showLevelInstructor, setShowLevelInstructor] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Enable keyboard input
   useInputHandler();
 
-  // Load topic selection maze
+  // =============== MAZE LOADERS ===============
+
   const loadTopicSelectionMaze = () => {
     resetGame();
     const topicMaze = generateTopicSelectionMaze(ML_TOPICS);
     setMaze(topicMaze);
 
-    // Find start position
     for (let y = 0; y < topicMaze.height; y++) {
       for (let x = 0; x < topicMaze.width; x++) {
         if (topicMaze.tiles[y][x].type === TileType.START) {
@@ -99,24 +96,30 @@ export function QuizDemo() {
       }
     }
 
-    setMazeMode('stream-map');
+    setMazeMode("stream-map");
     setCurrentTopic(null);
     setCurrentLevelNumber(null);
   };
 
-  // Load level progression maze for a topic
-  const loadLevelProgressionMaze = (topic: Topic) => {
+  const loadLevelProgressionMazeForTopic = (topic: Topic) => {
     resetGame();
     setCurrentTopic(topic);
 
-    // For topic model, generate checkpoints based on topic levels
-    // This needs to be implemented - for now use placeholder
-    const progressionMaze = generateLevelProgressionMaze(topic.id, {
-      easy: true, medium: false, hard: false  // Placeholder logic
-    });
+    const completed = getCompletedLevelsForTopic(topic.id);
+
+    const unlocked = {
+      easy: true,
+      medium:
+        isTopicLevelUnlocked(topic.id, 2) ||
+        completed.some((l) => l.levelNumber === 1),
+      hard:
+        isTopicLevelUnlocked(topic.id, 3) ||
+        completed.some((l) => l.levelNumber === 2),
+    };
+
+    const progressionMaze = generateLevelProgressionMaze(topic.id, unlocked);
     setMaze(progressionMaze);
 
-    // Find start position
     for (let y = 0; y < progressionMaze.height; y++) {
       for (let x = 0; x < progressionMaze.width; x++) {
         if (progressionMaze.tiles[y][x].type === TileType.START) {
@@ -126,10 +129,9 @@ export function QuizDemo() {
       }
     }
 
-    setMazeMode('level-map');
+    setMazeMode("level-map");
   };
 
-  // Load quiz maze for a level
   const loadQuizMaze = async (levelNumber: number) => {
     if (!currentTopic) return;
 
@@ -137,76 +139,66 @@ export function QuizDemo() {
     setCurrentLevelNumber(levelNumber);
 
     try {
-      // Show loading state
-      useGameStore.getState().setLoadingQuestions(true, 'Generating questions...');
+      useGameStore.getState().setLoadingQuestions(true, "Generating questions...");
 
-      // Fetch questions from Gemini API
-      const fetchedQuestions = await GeminiService.fetchQuizQuestions(currentTopic.name, levelNumber, 10);
+      const rawQuestions = await GeminiService.fetchQuizQuestions(
+        currentTopic.name,
+        levelNumber,
+        10
+      );
 
-      if (fetchedQuestions.length === 0) {
-        throw new Error('No questions generated');
+      // Normalize so `hint` always exists
+      const normalizedQuestions: Question[] = rawQuestions.map((q) => ({
+        hint: "",
+        ...q,
+      }));
+
+      let finalQuestions = normalizedQuestions;
+
+      if (!normalizedQuestions.length) {
+        finalQuestions = [
+          {
+            id: "fallback_1",
+            prompt: "What is Machine Learning?",
+            type: "multiple_choice",
+            options: [
+              "A type of language",
+              "Teaching computers to learn patterns",
+              "A programming paradigm",
+              "A database technology",
+            ],
+            correctAnswer: 1,
+            explanation: "Machine Learning teaches computers to learn patterns.",
+            hint: "",
+            topic: "machine-learning",
+            difficulty: 1,
+            estimatedTimeSeconds: 20,
+          },
+        ];
       }
 
-      setQuestions(fetchedQuestions);
+      setQuestions(finalQuestions);
       startQuiz();
 
-      // Generate maze (same size for now)
-      const size = LEVEL_SIZES.EASY;
-      let newMaze = generateMaze(size.width, size.height);
+      const { width, height } = LEVEL_SIZES.EASY;
+      let newMaze = generateMaze(width, height);
 
-      // Place quiz tiles with question IDs
-      const questionIds = fetchedQuestions.map(q => q.id);
-      newMaze = placeQuizTiles(newMaze, questionIds, fetchedQuestions.length);
+      const questionIds = finalQuestions.map((q) => q.id);
+      newMaze = placeQuizTiles(newMaze, questionIds, finalQuestions.length);
 
       setMaze(newMaze);
       setPlayerPosition({ x: newMaze.width - 2, y: newMaze.height - 2 });
 
-      setMazeMode('playing-level');
+      setMazeMode("playing-level");
     } catch (error) {
-      console.error('Failed to load quiz questions:', error);
-
-      // Fallback to basic questions
-      const fallbackQuestions: Question[] = [
-        {
-          id: 'fallback_1',
-          prompt: `What is Machine Learning?`,
-          type: 'multiple_choice',
-          options: [
-            'A type of language',
-            'Teaching computers to learn patterns',
-            'A programming paradigm',
-            'A database technology'
-          ],
-          correctAnswer: 1,
-          explanation: 'Machine Learning teaches computers to learn patterns from data.',
-          hint: 'Consider what ML aims to achieve',
-          topic: 'machine-learning',
-          difficulty: 1,
-          estimatedTimeSeconds: 20
-        },
-        {
-          id: 'fallback_2',
-          prompt: 'What is supervised learning?',
-          type: 'short_answer',
-          correctAnswer: 'learning with labeled data',
-          explanation: 'Supervised learning uses labeled examples to train ML models.',
-          hint: 'Think about how the model learns',
-          topic: 'machine-learning',
-          difficulty: 1,
-          estimatedTimeSeconds: 25
-        }
-      ];
-
-      setQuestions(fallbackQuestions);
-      startQuiz();
-      setMazeMode('playing-level');
+      console.error("Failed to load quiz questions:", error);
     } finally {
-      // Hide loading state
       useGameStore.getState().setLoadingQuestions(false);
     }
   };
 
-  // Check for endpoint/checkpoint/quiz tile interactions
+  // =============== TILE INTERACTIONS ===============
+
   useEffect(() => {
     if (!maze || showQuiz) return;
 
@@ -214,61 +206,47 @@ export function QuizDemo() {
     const tile = maze.tiles[y]?.[x];
     if (!tile) return;
 
-    // Topic selection mode
-    if (mazeMode === 'stream-map' && tile.type === TileType.STREAM_ENDPOINT) {
-      const topic = ML_TOPICS.find(s => s.id === tile.streamId);
+    if (mazeMode === "stream-map" && tile.type === TileType.STREAM_ENDPOINT) {
+      const topic = ML_TOPICS.find((s) => s.id === tile.streamId);
       if (topic) {
         audioManager.playCorrectAnswer();
-        setTimeout(() => loadLevelProgressionMaze(topic), 100);
+        setTimeout(() => loadLevelProgressionMazeForTopic(topic), 100);
       }
     }
 
-    // Level progression mode
-    if (mazeMode === 'level-map') {
-      // Check for unlocked checkpoint
+    if (mazeMode === "level-map") {
       if (tile.type === TileType.LEVEL_CHECKPOINT && tile.difficulty && !tile.isLocked) {
         audioManager.playCorrectAnswer();
-        // Parse difficulty to level number (placeholder logic)
-        const levelNum = tile.difficulty === 'easy' ? 1 : tile.difficulty === 'medium' ? 2 : 3;
-        // Show level instructor modal first
         setShowLevelInstructor(true);
       }
 
-      // Check for locked checkpoint
       if (tile.type === TileType.LOCKED_CHECKPOINT && tile.isLocked) {
-        const requiredLevel = tile.difficulty === 'medium' ? 'Easy' : 'Medium';
-        setLockedMessage(t('messages.goalLocked'));
+        setLockedMessage(t("messages.goalLocked"));
         audioManager.playIncorrectAnswer();
         setTimeout(() => setLockedMessage(null), 2000);
       }
     }
 
-    // Quiz maze mode
-    if (mazeMode === 'playing-level') {
-      // Check for goal reached
+    if (mazeMode === "playing-level") {
       if (tile.type === TileType.GOAL) {
         if (player.keysCollected >= 8) {
-          // SUCCESS - 8 out of 10 keys collected!
           audioManager.playVictory();
           completeLevel(questions.length);
-          setMazeMode('results');
+          setMazeMode("results");
           return;
         } else {
-          // FAILURE - Not enough keys - LOSE LIFE and reset mods
           const remaining = 8 - player.keysCollected;
-          setLockedMessage(`🔒 Need ${remaining} more key${remaining > 1 ? 's' : ''}! Answer more questions.`);
+          setLockedMessage(
+            `🔒 Need ${remaining} more key${remaining > 1 ? "s" : ""}!`
+          );
           audioManager.playIncorrectAnswer();
           loseLife();
-          setTimeout(() => {
-            setLockedMessage(`💔 Life lost! You need ${remaining} more key${remaining > 1 ? 's' : ''} to complete this level.`);
-            setTimeout(() => setLockedMessage(null), 3000);
-          }, 1000);
+          setTimeout(() => setLockedMessage(null), 3000);
         }
       }
 
-      // Check for quiz tile
       if (tile.type === TileType.QUIZ && tile.questionId && !tile.isAnswered) {
-        const question = questions.find(q => q.id === tile.questionId);
+        const question = questions.find((q) => q.id === tile.questionId);
         if (question) {
           audioManager.playQuizTrigger();
           setCurrentQuizQuestion(question);
@@ -277,19 +255,30 @@ export function QuizDemo() {
         }
       }
     }
-  }, [player.position, maze, mazeMode, showQuiz, questions]);
+  }, [
+    player.position,
+    mazeMode,
+    maze,
+    showQuiz,
+    player.keysCollected,
+    questions,
+    t,
+    loseLife,
+    completeLevel,
+  ]);
 
-  // Handle quiz answer
+  // =============== QUIZ ANSWER HANDLER ===============
+
   const handleQuizAnswer = (correct: boolean, attempts: number) => {
     const points = correct ? Math.max(100 - (attempts - 1) * 25, 25) : 0;
-    
+
     if (correct) {
       audioManager.playCorrectAnswer();
       audioManager.playKeyCollected();
       updateGameScore(points);
       collectKey();
-      addScore(points, correct);
-      
+      addScore(points, true);
+
       if (currentQuizTile) {
         answerQuizTile(currentQuizTile.x, currentQuizTile.y, true);
       }
@@ -298,7 +287,7 @@ export function QuizDemo() {
       audioManager.playLifeLost();
       loseLife();
       addScore(0, false);
-      
+
       if (currentQuizTile) {
         answerQuizTile(currentQuizTile.x, currentQuizTile.y, false);
       }
@@ -309,42 +298,12 @@ export function QuizDemo() {
     nextQuestion();
   };
 
-  // Navigation handlers
-  const handleBackToStreams = () => {
-    loadTopicSelectionMaze();
-  };
+  // =============== NAVIGATION HELPERS ===============
+
+  const handleBackToStreams = () => loadTopicSelectionMaze();
 
   const handleBackToLevelMap = () => {
-    if (currentTopic) {
-      loadLevelProgressionMaze(currentTopic);
-    }
-  };
-
-  const handleNextStream = () => {
-    resetCurrentSession();
-    loadTopicSelectionMaze();
-  };
-
-  const handleNextLevel = () => {
-    const nextLevel = getNextLevelForTopic(currentTopic?.id || '', currentLevelNumber || 1);
-    if (nextLevel && currentTopic) {
-      resetCurrentSession();
-      loadQuizMaze(nextLevel);
-    }
-  };
-
-  const handleRetry = () => {
-    if (currentLevelNumber && currentTopic) {
-      resetCurrentSession();
-      loadQuizMaze(currentLevelNumber);
-    }
-  };
-
-  const handleReturnToLevelMap = () => {
-    resetCurrentSession();
-    if (currentTopic) {
-      loadLevelProgressionMaze(currentTopic);
-    }
+    if (currentTopic) loadLevelProgressionMazeForTopic(currentTopic);
   };
 
   const handleMainMenu = () => {
@@ -352,215 +311,190 @@ export function QuizDemo() {
     loadTopicSelectionMaze();
   };
 
-  const getTimeSpent = () => {
-    if (sessionStartTime <= 0) return 0;
-    const now = Date.now();
-    return Math.floor((now - sessionStartTime) / 1000);
-  };
-
-  // Get instructions based on mode
-  const getInstructions = () => {
-    switch (mazeMode) {
-      case 'stream-map':
-        return {
-          title: t('messages.topicSelect'),
-          instructions: 'Navigate to a topic endpoint to select it',
-        };
-      case 'level-map':
-        return {
-          title: `${currentTopic?.icon} ${currentTopic?.name} - ${t('messages.levelSelect', { topic: currentTopic?.name })}`,
-          instructions: 'Navigate to a checkpoint to start that level',
-        };
-      case 'playing-level':
-        return {
-          title: t('messages.playingLevel', { topic: currentTopic?.name, level: currentLevelNumber }),
-          instructions: t('messages.collectKeys'),
-        };
-      default:
-        return {
-          title: t('game.title'),
-          instructions: 'Navigate and learn!',
-        };
+  const handleRetry = () => {
+    if (currentTopic && currentLevelNumber) {
+      resetCurrentSession();
+      loadQuizMaze(currentLevelNumber);
     }
   };
 
-  const { title, instructions } = getInstructions();
+  const handleNextLevel = () => {
+    if (!currentTopic || !currentLevelNumber) return;
+    const nextLevel = getNextLevelForTopic(currentTopic.id, currentLevelNumber);
+    if (nextLevel) {
+      resetCurrentSession();
+      loadQuizMaze(nextLevel);
+    }
+  };
 
-  // Initialize topic selection maze on mount
+  const handleReturnToLevelMap = () => {
+    resetCurrentSession();
+    if (currentTopic) loadLevelProgressionMazeForTopic(currentTopic);
+  };
+
+  const handleNextStream = () => {
+    resetCurrentSession();
+    loadTopicSelectionMaze();
+  };
+
+  const getTimeSpent = () => {
+    if (sessionStartTime <= 0) return 0;
+    return Math.floor((Date.now() - sessionStartTime) / 1000);
+  };
+
   useEffect(() => {
     loadTopicSelectionMaze();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // =============== INLINE QUESTION PANEL (NOT MODAL) ===============
+
+  const showInlineQuiz = showQuiz && currentQuizQuestion != null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-primary-600 to-primary-800 shadow-lg p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-1">
-              🎓 {t('game.title')}
-            </h1>
-            <p className="text-gray-200 text-sm">
-              {instructions}
-            </p>
-          </div>
+    <div className="min-h-screen flex flex-col">
+      {/* HEADER */}
+      <header className="bg-pink-500 text-white p-4 border-b border-pink-600">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            🎓 ML Maze Quest
+          </h1>
+
           <button
             onClick={() => setShowSettings(true)}
-            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-            title="Settings"
+            className="px-4 py-2 bg-black/30 rounded shadow text-sm"
           >
-            ⚙️ Settings
+            ⚙ Settings
           </button>
         </div>
       </header>
 
-      {/* Stats Bar */}
-      {mazeMode !== 'results' && (
-        <div className="bg-gray-800 border-b border-gray-700 py-3">
-          <div className="max-w-7xl mx-auto px-4 flex justify-between items-center flex-wrap gap-4">
-            <div className="flex gap-4">
-              {mazeMode === 'playing-level' && (
-                <>
-                  <div className="text-center">
-                    <div className="text-gray-400 text-xs mb-1">{t('game.lives')}</div>
-                    <div className="text-xl font-bold text-red-400">
-                      {'❤️'.repeat(player.lives)}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-gray-400 text-xs mb-1">{t('game.score')}</div>
-                    <div className="text-xl font-bold text-yellow-400">{player.score}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-gray-400 text-xs mb-1">{t('game.keys')}</div>
-                    <div className="text-xl font-bold text-blue-400">
-                      {player.keysCollected}/{questions.length}
-                    </div>
-                  </div>
-                </>
-              )}
-              {currentTopic && (
-                <div className="text-center">
-                  <div className="text-gray-400 text-xs mb-1">{t('game.topic')}</div>
-                  <div className="text-lg font-bold text-white">
-                    {currentTopic.icon} {currentTopic.name}
-                  </div>
-                </div>
-              )}
-              {currentLevelNumber && mazeMode === 'playing-level' && (
-                <div className="text-center">
-                  <div className="text-gray-400 text-xs mb-1">{t('game.level')}</div>
-                  <div className="text-lg font-bold text-green-400">
-                    Level {currentLevelNumber}
-                  </div>
-                </div>
+      {/* MAIN */}
+      <main className="flex-1 px-4 py-4 flex justify-center">
+        <div className="w-full max-w-6xl flex flex-col gap-4">
+          {/* TOP ROW: other details + nav */}
+          <div className="flex justify-between items-center text-sm text-white/90">
+            <div>
+              {currentTopic && currentLevelNumber && (
+                <span>
+                  {currentTopic.icon} {currentTopic.name} • Level{" "}
+                  {currentLevelNumber}
+                </span>
               )}
             </div>
+
             <div className="flex gap-2">
-            {mazeMode === 'level-map' && (
+              {mazeMode === "level-map" && (
                 <button
                   onClick={handleBackToStreams}
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition text-sm"
+                  className="px-3 py-1 bg-black/30 rounded text-xs"
                 >
-                  ⬅️ {t('navigation.backToSubjects')}
+                  ⬅ Subjects
                 </button>
               )}
-              {mazeMode === 'playing-level' && (
+
+              {mazeMode === "playing-level" && (
                 <button
                   onClick={handleBackToLevelMap}
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition text-sm"
+                  className="px-3 py-1 bg-black/30 rounded text-xs"
                 >
-                  ⬅️ {t('navigation.backToLevels')}
+                  ⬅ Levels
                 </button>
               )}
+
               <button
                 onClick={handleMainMenu}
-                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition text-sm"
+                className="px-3 py-1 bg-black/30 rounded text-xs"
               >
-                🏠 {t('navigation.mainMenu')}
+                🏠 Main Menu
+              </button>
+            </div>
+          </div>
+
+          {/* LOCK MESSAGE */}
+          {lockedMessage && (
+            <div className="bg-red-700 text-white px-4 py-2 rounded shadow text-sm">
+              {lockedMessage}
+            </div>
+          )}
+
+          {/* QUESTION ROW - right aligned, centered panel inside 65% */}
+          <div className="flex w-full">
+            <div className="flex-1" />
+            <div className="w-[65%] px-6 py-4 flex justify-end">
+              <div className="w-full max-w-2xl">
+                {showInlineQuiz && currentQuizQuestion && (
+                  <InlineQuizPanel
+                    question={currentQuizQuestion}
+                    onAnswer={handleQuizAnswer}
+                    currentQuestionNumber={currentQuestionIndex + 1}
+                    totalQuestions={questions.length}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* MAZE ROW - right aligned */}
+          <div className="flex w-full h-[70vh]">
+            {/* left side empty to show background */}
+            <div className="flex-1" />
+            <div className="relative w-[65%] h-full rounded-lg overflow-hidden border border-white/15 shadow-2xl bg-black">
+              <MazeCanvas />
+              <MiniMap size={140} position="bottom-right" />
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* RESULTS MODAL */}
+      {mazeMode === "results" && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-4">Level Complete!</h3>
+            <p className="text-gray-300 mb-4">
+              Score: {currentScore} | Correct: {currentCorrectAnswers}/
+              {questions.length} | Time: {getTimeSpent()}s
+            </p>
+            <div className="flex flex-wrap gap-2 justify-end">
+              <button
+                onClick={handleRetry}
+                className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-sm"
+              >
+                Retry
+              </button>
+
+              {hasNextLevelForTopic(
+                currentTopic?.id || "",
+                currentLevelNumber || 1
+              ) && (
+                <button
+                  onClick={handleNextLevel}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-sm"
+                >
+                  Next Level
+                </button>
+              )}
+
+              <button
+                onClick={handleReturnToLevelMap}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-sm"
+              >
+                Back to Levels
+              </button>
+
+              <button
+                onClick={handleNextStream}
+                className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded text-sm"
+              >
+                New Topic
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
-        {mazeMode !== 'results' && (
-          <div className="max-w-6xl w-full">
-            <div className="flex flex-col items-center gap-4">
-              {/* Title */}
-        <div className="bg-gray-800 rounded-lg p-4 max-w-2xl w-full">
-                <h2 className="text-2xl font-bold text-white text-center mb-2">{title}</h2>
-                {mazeMode === 'stream-map' && (
-                  <p className="text-gray-400 text-center text-sm">
-                    6 ML topics • Navigate to your choice
-                  </p>
-                )}
-                {mazeMode === 'level-map' && (
-                  <p className="text-gray-400 text-center text-sm">
-                    Complete levels in order: 1 → 2 → 3 ...
-                  </p>
-                )}
-              </div>
-
-              {/* Controls hint */}
-              <div className="bg-gray-800 rounded-lg p-3 max-w-2xl w-full">
-                <div className="grid grid-cols-2 gap-2 text-xs text-gray-300">
-                  <div><strong className="text-blue-400">Arrow Keys / WASD:</strong> Move</div>
-                  <div><strong className="text-purple-400">Purple Tiles:</strong> Subject Endpoints</div>
-                  <div><strong className="text-green-400">Green Tiles:</strong> Unlocked Levels</div>
-                  <div><strong className="text-gray-400">Gray Tiles:</strong> Locked Levels</div>
-                </div>
-              </div>
-
-              {/* Locked message */}
-              {lockedMessage && (
-                <div className="bg-red-900 border border-red-700 text-white px-6 py-3 rounded-lg font-semibold">
-                  {lockedMessage}
-                </div>
-              )}
-
-              {/* Maze Canvas */}
-              <div className="relative">
-                <MazeCanvas />
-                <MiniMap size={150} position="bottom-right" />
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Modals */}
-      {showQuiz && currentQuizQuestion && (
-        <QuizModal
-          question={currentQuizQuestion}
-          onAnswer={handleQuizAnswer}
-          onClose={() => setShowQuiz(false)}
-          isVisible={true}
-          currentQuestionNumber={currentQuestionIndex + 1}
-          totalQuestions={questions.length}
-        />
-      )}
-
-      {/* TODO: Update ResultsSummaryModal interface to support topics */}
-      {mazeMode === 'results' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-white mb-4">Level Complete!</h3>
-            <p className="text-gray-300 mb-4">Score: {currentScore} | Correct: {currentCorrectAnswers}/{questions.length}</p>
-            <button
-              onClick={() => setMazeMode('stream-map')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Startup Modals */}
+      {/* STARTUP MODALS */}
       <CharacterNamingModal
         isVisible={showCharacterNaming}
         onComplete={() => {
@@ -571,22 +505,22 @@ export function QuizDemo() {
 
       <InstructorTutorialModal
         isVisible={showTutorial}
-        onComplete={() => {
-          setShowTutorial(false);
-        }}
+        onComplete={() => setShowTutorial(false)}
         characterName={useGameStore.getState().characterName}
       />
 
       <LevelInstructorModal
         isVisible={showLevelInstructor}
-        topicName={currentTopic?.name || ''}
+        topicName={currentTopic?.name || ""}
         levelNumber={currentLevelNumber || 1}
         onStartLevel={() => {
           setShowLevelInstructor(false);
-          // Now start the quiz maze
-          const levelNum = maze?.tiles[player.position.y][player.position.x].difficulty === 'easy' ? 1 :
-                          maze?.tiles[player.position.y][player.position.x].difficulty === 'medium' ? 2 : 3;
-          setTimeout(() => loadQuizMaze(levelNum || 1), 100);
+          const difficulty =
+            maze?.tiles[player.position.y][player.position.x].difficulty ||
+            "easy";
+          const levelNum =
+            difficulty === "easy" ? 1 : difficulty === "medium" ? 2 : 3;
+          setTimeout(() => loadQuizMaze(levelNum), 100);
         }}
       />
 
@@ -594,13 +528,265 @@ export function QuizDemo() {
         isVisible={showSettings}
         onClose={() => setShowSettings(false)}
       />
-
-      {/* Footer */}
-      <footer className="bg-gray-900 border-t border-gray-800 py-3 text-center text-gray-500 text-sm">
-        <p>✨ ML Learning Maze • Maze-Based Navigation • Navigate & Learn! ✨</p>
-      </footer>
     </div>
   );
 }
 
-export default QuizDemo;
+// =============== INLINE QUIZ PANEL (NO MODAL) ===============
+
+interface InlineQuizPanelProps {
+  question: Question;
+  onAnswer: (correct: boolean, attempts: number) => void;
+  currentQuestionNumber: number;
+  totalQuestions: number;
+}
+
+function InlineQuizPanel({
+  question,
+  onAnswer,
+  currentQuestionNumber,
+  totalQuestions,
+}: InlineQuizPanelProps) {
+  const { t } = useTranslation();
+
+  const [selectedAnswer, setSelectedAnswer] = useState<string>("");
+  const [userAnswer, setUserAnswer] = useState("");
+  const [attempts, setAttempts] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [currentQuestionId, setCurrentQuestionId] = useState(question.id);
+
+  // Reset on question change
+  if (currentQuestionId !== question.id) {
+    setCurrentQuestionId(question.id);
+    setSelectedAnswer("");
+    setUserAnswer("");
+    setAttempts(0);
+    setShowHint(false);
+    setShowResult(false);
+    setIsCorrect(false);
+  }
+
+  const canSubmit = () => {
+    if (question.type === "short_answer") {
+      return userAnswer.trim().length > 0;
+    }
+    return selectedAnswer.length > 0;
+  };
+
+  const handleSubmit = () => {
+    const newAttempts = attempts + 1;
+    setAttempts(newAttempts);
+
+    let correct = false;
+
+    if (question.type === "multiple_choice") {
+      const selectedIndex = question.options?.indexOf(selectedAnswer) ?? -1;
+      correct = selectedIndex === question.correctAnswer;
+    } else if (question.type === "short_answer") {
+      correct =
+        userAnswer.trim().toLowerCase() ===
+        String(question.correctAnswer).toLowerCase();
+    } else if (question.type === "true_false") {
+      correct = selectedAnswer === question.correctAnswer;
+    }
+
+    setIsCorrect(correct);
+    setShowResult(true);
+
+    setTimeout(() => {
+      onAnswer(correct, newAttempts);
+      setShowResult(false);
+    }, 1200);
+  };
+
+  return (
+  <div
+    className="
+      bg-white 
+      border-4 border-black 
+      rounded-2xl
+      px-6 py-5 
+      mb-3
+    "
+    style={{
+      backgroundColor: "white",
+      border: "4px solid black",
+      color: "#ff0099",           // 🔥 Hot Pink Default Text
+    }}
+  >
+    {/* HEADER */}
+    <div className="mb-4">
+      <div
+        className="flex justify-between text-xs mb-1 font-bold"
+        style={{ color: "#ff0099" }}       // 🔥 HOT PINK
+      >
+        <span>
+          Question {currentQuestionNumber} of {totalQuestions}
+        </span>
+        <span>
+          {Math.round((currentQuestionNumber / totalQuestions) * 100)}%
+        </span>
+      </div>
+
+      <div className="w-full bg-black rounded-full h-2">
+        <div
+          className="h-2 rounded-full transition-all duration-500"
+          style={{
+            width: `${(currentQuestionNumber / totalQuestions) * 100}%`,
+            backgroundColor: "#ff0099",    
+          }}
+        />
+      </div>
+    </div>
+
+    {/* TOPIC + DIFFICULTY */}
+    <div
+      className="flex justify-between items-center text-xs font-bold mb-2"
+      style={{ color: "#ff0099" }}      
+    >
+      <span>{question.topic}</span>
+      <span>{t("quiz.difficulty", { level: question.difficulty })}</span>
+    </div>
+
+    {/* LABEL */}
+    <h2
+      className="text-xl font-extrabold mb-2 tracking-wide"
+      style={{ color: "#ff0099" }}       
+    >
+      {t("quiz.questionLabel")}
+    </h2>
+
+    {/* QUESTION */}
+    <p className="font-bold mb-4" style={{ color: "#ff0099" }}>
+      {question.prompt}
+    </p>
+
+    {!showResult && (
+      <>
+        {/* ANSWERS */}
+        <div className="mb-4">
+          {question.type === "multiple_choice" && question.options && (
+            <div className="space-y-2">
+              {question.options.map((option, idx) => {
+                const active = selectedAnswer === option;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedAnswer(option)}
+                    style={{
+                      border: "2px solid black",
+                      backgroundColor: active ? "#ffcced" : "white",
+                      color: "#ff0099",
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-lg font-bold"
+                  >
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {question.type === "true_false" && (
+            <div className="flex gap-3">
+              {["true", "false"].map((val) => (
+                <button
+                  key={val}
+                  onClick={() => setSelectedAnswer(val)}
+                  className="flex-1 px-4 py-3 rounded-lg font-bold"
+                  style={{
+                    border: "2px solid black",
+                    backgroundColor: selectedAnswer === val ? "#ffcced" : "white",
+                    color: "#ff0099",
+                  }}
+                >
+                  {val === "true" ? "True" : "False"}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* HINT */}
+        {question.hint && (
+          <div className="mb-4">
+            {!showHint ? (
+              <button
+                type="button"
+                onClick={() => setShowHint(true)}
+                className="font-bold underline"
+                style={{ color: "#ff0099" }}
+              >
+                💡 Need a hint?
+              </button>
+            ) : (
+              <div
+                className="px-3 py-2 rounded-lg font-bold"
+                style={{
+                  backgroundColor: "#ffe4f4",
+                  border: "1px solid #ff0099",
+                  color: "#ff0099",
+                }}
+              >
+                <strong>Hint:</strong> {question.hint}
+              </div>
+            )}
+          </div>
+        )}
+
+        {attempts > 0 && (
+          <p className="text-xs font-bold mb-3" style={{ color: "#ff0099" }}>
+            Attempts: {attempts}
+          </p>
+        )}
+
+        <button
+          type="button"
+          disabled={!canSubmit()}
+          className="w-full px-4 py-3 rounded-lg font-bold"
+          style={{
+            backgroundColor: "#ff0099",
+            color: "white",
+            border: "2px solid black",
+            opacity: canSubmit() ? 1 : 0.4,
+          }}
+          onClick={handleSubmit}
+        >
+          Submit Answer
+        </button>
+      </>
+    )}
+
+    {/* RESULT */}
+    {showResult && (
+      <div className="mt-4 font-bold px-4 py-3 rounded-lg">
+        {isCorrect ? (
+          <div
+            style={{
+              backgroundColor: "#d4ffe0",
+              border: "2px solid green",
+              color: "green",
+            }}
+          >
+            ✅ Correct!
+          </div>
+        ) : (
+          <div
+            style={{
+              backgroundColor: "#ffe2e2",
+              border: "2px solid red",
+              color: "red",
+            }}
+          >
+            ❌ Incorrect
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+);
+
+}
