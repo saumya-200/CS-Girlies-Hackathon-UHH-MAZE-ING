@@ -547,43 +547,39 @@ function InlineQuizPanel({
   currentQuestionNumber,
   totalQuestions,
 }: InlineQuizPanelProps) {
+
   const { t } = useTranslation();
 
+  // STATE (you were missing these!)
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [userAnswer, setUserAnswer] = useState("");
   const [attempts, setAttempts] = useState(0);
-  const [showHint, setShowHint] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [currentQuestionId, setCurrentQuestionId] = useState(question.id);
 
-  // Reset on question change
-  if (currentQuestionId !== question.id) {
-    setCurrentQuestionId(question.id);
-    setSelectedAnswer("");
-    setUserAnswer("");
-    setAttempts(0);
-    setShowHint(false);
-    setShowResult(false);
-    setIsCorrect(false);
-  }
-
-  const canSubmit = () => {
-    if (question.type === "short_answer") {
-      return userAnswer.trim().length > 0;
+  // Reset when question changes
+  useEffect(() => {
+    if (currentQuestionId !== question.id) {
+      setCurrentQuestionId(question.id);
+      setSelectedAnswer("");
+      setUserAnswer("");
+      setAttempts(0);
+      setShowResult(false);
+      setIsCorrect(false);
     }
-    return selectedAnswer.length > 0;
-  };
+  }, [question.id, currentQuestionId]);
 
+  // Submit handler
   const handleSubmit = () => {
-    const newAttempts = attempts + 1;
-    setAttempts(newAttempts);
+    const attemptNum = attempts + 1;
+    setAttempts(attemptNum);
 
     let correct = false;
 
     if (question.type === "multiple_choice") {
-      const selectedIndex = question.options?.indexOf(selectedAnswer) ?? -1;
-      correct = selectedIndex === question.correctAnswer;
+      correct =
+        question.options?.indexOf(selectedAnswer) === question.correctAnswer;
     } else if (question.type === "short_answer") {
       correct =
         userAnswer.trim().toLowerCase() ===
@@ -596,197 +592,92 @@ function InlineQuizPanel({
     setShowResult(true);
 
     setTimeout(() => {
-      onAnswer(correct, newAttempts);
+      onAnswer(correct, attemptNum);
       setShowResult(false);
-    }, 1200);
+    }, 1000);
   };
 
   return (
-  <div
-    className="
-      bg-white 
-      border-4 border-black 
-      rounded-2xl
-      px-6 py-5 
-      mb-3
-    "
-    style={{
-      backgroundColor: "white",
-      border: "4px solid black",
-      color: "#ff0099",           // 🔥 Hot Pink Default Text
-    }}
-  >
-    {/* HEADER */}
-    <div className="mb-4">
-      <div
-        className="flex justify-between text-xs mb-1 font-bold"
-        style={{ color: "#ff0099" }}       // 🔥 HOT PINK
-      >
-        <span>
-          Question {currentQuestionNumber} of {totalQuestions}
-        </span>
-        <span>
-          {Math.round((currentQuestionNumber / totalQuestions) * 100)}%
-        </span>
-      </div>
+    <div className="pixel-panel pixel-text mb-3">
 
-      <div className="w-full bg-black rounded-full h-2">
-        <div
-          className="h-2 rounded-full transition-all duration-500"
-          style={{
-            width: `${(currentQuestionNumber / totalQuestions) * 100}%`,
-            backgroundColor: "#ff0099",    
-          }}
-        />
-      </div>
-    </div>
-
-    {/* TOPIC + DIFFICULTY */}
-    <div
-      className="flex justify-between items-center text-xs font-bold mb-2"
-      style={{ color: "#ff0099" }}      
-    >
-      <span>{question.topic}</span>
-      <span>{t("quiz.difficulty", { level: question.difficulty })}</span>
-    </div>
-
-    {/* LABEL */}
-    <h2
-      className="text-xl font-extrabold mb-2 tracking-wide"
-      style={{ color: "#ff0099" }}       
-    >
-      {t("quiz.questionLabel")}
-    </h2>
-
-    {/* QUESTION */}
-    <p className="font-bold mb-4" style={{ color: "#ff0099" }}>
-      {question.prompt}
-    </p>
-
-    {!showResult && (
-      <>
-        {/* ANSWERS */}
-        <div className="mb-4">
-          {question.type === "multiple_choice" && question.options && (
-            <div className="space-y-2">
-              {question.options.map((option, idx) => {
-                const active = selectedAnswer === option;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setSelectedAnswer(option)}
-                    style={{
-                      border: "2px solid black",
-                      backgroundColor: active ? "#ffcced" : "white",
-                      color: "#ff0099",
-                    }}
-                    className="w-full text-left px-4 py-3 rounded-lg font-bold"
-                  >
-                    {option}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {question.type === "true_false" && (
-            <div className="flex gap-3">
-              {["true", "false"].map((val) => (
-                <button
-                  key={val}
-                  onClick={() => setSelectedAnswer(val)}
-                  className="flex-1 px-4 py-3 rounded-lg font-bold"
-                  style={{
-                    border: "2px solid black",
-                    backgroundColor: selectedAnswer === val ? "#ffcced" : "white",
-                    color: "#ff0099",
-                  }}
-                >
-                  {val === "true" ? "True" : "False"}
-                </button>
-              ))}
-            </div>
-          )}
+      {/* HEADER */}
+      <div className="mb-4">
+        <div className="flex justify-between text-xs mb-1 pixel-text">
+          <span>Q {currentQuestionNumber}/{totalQuestions}</span>
+          <span>{Math.round((currentQuestionNumber / totalQuestions) * 100)}%</span>
         </div>
 
-        {/* HINT */}
-        {question.hint && (
-          <div className="mb-4">
-            {!showHint ? (
-              <button
-                type="button"
-                onClick={() => setShowHint(true)}
-                className="font-bold underline"
-                style={{ color: "#ff0099" }}
-              >
-                💡 Need a hint?
-              </button>
-            ) : (
-              <div
-                className="px-3 py-2 rounded-lg font-bold"
-                style={{
-                  backgroundColor: "#ffe4f4",
-                  border: "1px solid #ff0099",
-                  color: "#ff0099",
-                }}
-              >
-                <strong>Hint:</strong> {question.hint}
-              </div>
-            )}
-          </div>
-        )}
-
-        {attempts > 0 && (
-          <p className="text-xs font-bold mb-3" style={{ color: "#ff0099" }}>
-            Attempts: {attempts}
-          </p>
-        )}
-
-        <button
-          type="button"
-          disabled={!canSubmit()}
-          className="w-full px-4 py-3 rounded-lg font-bold"
-          style={{
-            backgroundColor: "#ff0099",
-            color: "white",
-            border: "2px solid black",
-            opacity: canSubmit() ? 1 : 0.4,
-          }}
-          onClick={handleSubmit}
-        >
-          Submit Answer
-        </button>
-      </>
-    )}
-
-    {/* RESULT */}
-    {showResult && (
-      <div className="mt-4 font-bold px-4 py-3 rounded-lg">
-        {isCorrect ? (
+        <div className="w-full bg-black rounded-full h-2">
           <div
-            style={{
-              backgroundColor: "#d4ffe0",
-              border: "2px solid green",
-              color: "green",
-            }}
-          >
-            ✅ Correct!
-          </div>
-        ) : (
-          <div
-            style={{
-              backgroundColor: "#ffe2e2",
-              border: "2px solid red",
-              color: "red",
-            }}
-          >
-            ❌ Incorrect
-          </div>
-        )}
+            className="h-2 bg-[#ff008c] rounded-full transition-all duration-500"
+            style={{ width: `${(currentQuestionNumber / totalQuestions) * 100}%` }}
+          />
+        </div>
       </div>
-    )}
-  </div>
-);
 
+      {/* QUESTION */}
+      <div className="mb-4">
+        <div className="text-lg font-bold pixel-text">QUESTION</div>
+        <p className="mt-2 pixel-text">{question.prompt}</p>
+      </div>
+
+      {/* MULTI CHOICE */}
+      {question.type === "multiple_choice" && (
+        <div className="flex flex-col gap-2">
+          {question.options?.map((opt, i) => (
+            <button
+              key={i}
+              onClick={() => setSelectedAnswer(opt)}
+              className={`
+                w-full text-left px-4 py-3 rounded-lg border-4 border-black bg-white pixel-text 
+                ${selectedAnswer === opt ? "bg-[#ffe0f4]" : ""}
+              `}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* SHORT ANSWER */}
+      {question.type === "short_answer" && (
+        <input
+          className="w-full px-4 py-3 rounded-lg border-4 border-black bg-white pixel-text outline-none"
+          value={userAnswer}
+          onChange={(e) => setUserAnswer(e.target.value)}
+        />
+      )}
+
+      {/* TRUE/FALSE */}
+      {question.type === "true_false" && (
+        <div className="flex gap-3">
+          {["true", "false"].map((v) => (
+            <button
+              key={v}
+              onClick={() => setSelectedAnswer(v)}
+              className={`
+                flex-1 px-4 py-3 rounded-lg border-4 border-black bg-white pixel-text 
+                ${selectedAnswer === v ? "bg-[#ffe0f4]" : ""}
+              `}
+            >
+              {v.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* SUBMIT */}
+      <button
+        onClick={handleSubmit}
+        className="
+          w-full mt-4 px-4 py-3 rounded-lg 
+          border-4 border-black bg-[#ff008c] text-white 
+          pixel-text font-bold
+        "
+      >
+        SUBMIT
+      </button>
+
+    </div>
+  );
 }
