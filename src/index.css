@@ -162,3 +162,59 @@ h1, h2, h3, h4, h5, h6 {
   scrollbar-color: #4b5563 #1f2937;
   scrollbar-width: thin;
 }
+
+/* === FIX TUTORIAL POPUP === */
+
+.tutorial-panel {
+  background: white !important;
+  border: 4px solid black !important;
+  border-radius: 18px !important;
+
+  padding: 24px !important;
+  width: 90% !important;
+  max-width: 480px !important;
+
+  position: absolute !important;
+  top: 120px !important;
+  left: 40px !important;
+
+  z-index: 99999 !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+
+  /* readable text */
+  color: #222 !important;
+
+  /* font improvements */
+  font-family: "GBA", "Press Start 2P", "VT323", monospace !important;
+  image-rendering: pixelated;
+}
+
+.tutorial-panel button {
+  background: black !important;
+  color: white !important;
+  border: 3px solid #ff008c !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-family: inherit !important;
+}
+
+/* FORCE LEFT OWL PANEL ALWAYS WHITE */
+#left-owl-panel {
+  background: white !important;
+  border: 6px solid black !important;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-image: url('/src/assets/background/background.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}

@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useGameStore } from '../../stores/gameStore';
+// src/components/modals/LevelInstructorModal.tsx
+import { useState, useEffect } from "react";
+import { useGameStore } from "../../stores/gameStore";
+import wiseOwl from "../../assets/wise-owl.png";
 
 interface LevelInstructorModalProps {
   isVisible: boolean;
@@ -12,128 +14,137 @@ export function LevelInstructorModal({
   isVisible,
   topicName,
   levelNumber,
-  onStartLevel
+  onStartLevel,
 }: LevelInstructorModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const { characterName } = useGameStore();
 
-  const displayName = characterName || 'Student';
+  const displayName = characterName || "Student";
 
   useEffect(() => {
     if (!isVisible) setCurrentStep(0);
   }, [isVisible]);
 
-  const levelObjectives = [
+  const pages = [
     {
       title: `${displayName}, let's tackle ${topicName}!`,
-      content: `Professor MindAI here to guide you through ${topicName} Level ${levelNumber}. This level challenges your understanding of key Machine Learning concepts.`,
+      content: `Professor MindAI here to guide you through ${topicName} Level ${levelNumber}.`,
       icon: "👨‍🏫",
-      type: "introduction"
+      type: "Introduction",
     },
     {
       title: "Level Objectives",
-      content: `Navigate the maze, answer ${levelNumber + 3} quiz questions, and collect ${levelNumber + 3} keys to unlock the goal. Each correct answer builds your ML knowledge!`,
+      content: `Answer ${levelNumber + 3} questions and collect ${
+        levelNumber + 3
+      } keys to unlock the goal.`,
       icon: "🎯",
-      type: "objectives"
+      type: "Objectives",
     },
     {
-      title: "Strategy Tips",
-      content: `Take your time with each question - hints are available if needed. Wrong answers cost lives, but you have 5 total. The goal becomes unlocked only when you collect all keys.`,
+      title: "Tips",
+      content:
+        "Use hints wisely. Wrong answers cost lives. Collect all keys to open the exit.",
       icon: "💡",
-      type: "tips"
+      type: "Tips",
     },
     {
-      title: "Ready to Begin Learning?",
-      content: `${displayName}, you are equipped with everything needed for this ML challenge. Show me what you've learned about ${topicName} - let's begin your learning adventure!`,
+      title: "Ready?",
+      content: `Let's begin your journey in ${topicName}!`,
       icon: "🚀",
-      type: "motivation"
-    }
+      type: "Motivation",
+    },
   ];
-
-  const nextStep = () => {
-    if (currentStep < levelObjectives.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onStartLevel();
-    }
-  };
-
-  const skipTutorial = () => {
-    onStartLevel();
-  };
 
   if (!isVisible) return null;
 
-  const currentObjective = levelObjectives[currentStep];
+  const page = pages[currentStep];
+
+  const next = () => {
+    if (currentStep < pages.length - 1) setCurrentStep((v) => v + 1);
+    else onStartLevel();
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-gray-900 border-2 border-primary-400 rounded-xl p-6 max-w-lg w-full mx-4 shadow-2xl">
-        {/* Skip Button */}
+    <div className="w-full h-full bg-white flex flex-col p-4">
+      {/* HEADER */}
+      <div className="flex justify-between mb-3">
+        <div>
+          <span className="pixel-text text-xs text-[#ff008c]">
+            Level Guide
+          </span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-lg">{page.icon}</span>
+            <h2 className="pixel-text text-sm font-bold text-black leading-snug">
+              {page.title}
+            </h2>
+          </div>
+        </div>
+
         <button
-          onClick={skipTutorial}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors text-sm underline"
+          onClick={onStartLevel}
+          className="text-xs underline text-[#ff008c] hover:text-black pixel-text"
         >
-          Skip Tutorial
+          Skip
         </button>
+      </div>
 
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="text-6xl mb-3">{currentObjective.icon}</div>
-          <h3 className="text-xl font-bold text-white mb-2">{currentObjective.title}</h3>
-          <div className="flex justify-center items-center space-x-2 mb-4">
-            {levelObjectives.map((_, index) => (
-              <div
-                key={index}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentStep ? 'bg-primary-400' : 'bg-gray-600'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="text-center mb-8">
-          <p className="text-gray-300 leading-relaxed text-sm">
-            {currentObjective.content}
-          </p>
-        </div>
-
-        {/* Level Info */}
-        <div className="bg-gray-800 rounded-lg p-4 mb-6">
-          <div className="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-400">{levelNumber + 3}</div>
-              <div className="text-sm text-gray-400">Questions</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-yellow-400">{levelNumber + 3}</div>
-              <div className="text-sm text-gray-400">Keys Needed</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Button */}
-        <div className="text-center">
-          <button
-            onClick={nextStep}
-            className={`px-8 py-3 rounded-lg font-bold text-white transition-all transform hover:scale-105 shadow-lg ${
-              currentStep === levelObjectives.length - 1
-                ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'
-                : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'
+      {/* PROGRESS */}
+      <div className="flex items-center gap-2 mb-3">
+        {pages.map((_, i) => (
+          <div
+            key={i}
+            className={`w-2 h-2 rounded-full ${
+              i === currentStep ? "bg-[#ff008c]" : "bg-gray-300"
             }`}
-          >
-            {currentStep === levelObjectives.length - 1 ? 'Start Level! 🎓' : 'Continue →'}
-          </button>
-        </div>
+          />
+        ))}
+        <span className="text-[10px] text-gray-600 pixel-text">
+          Step {currentStep + 1} of {pages.length}
+        </span>
+      </div>
 
-        {/* Progress Text */}
-        <div className="text-center mt-4">
-          <p className="text-gray-500 text-xs">
-            {currentStep + 1} of {levelObjectives.length} • ML Learning Challenge
-          </p>
+      {/* MAIN */}
+      <div className="flex-1 text-sm pixel-text text-black">
+        <p className="text-[#ff008c] text-xs">{page.type}</p>
+        <p className="mt-2">{page.content}</p>
+
+        <div className="grid grid-cols-2 gap-3 text-center mt-4">
+          <div className="border-2 border-black rounded-lg px-2 py-2">
+            <div className="pixel-text text-xl font-extrabold text-[#ff008c]">
+              {levelNumber + 3}
+            </div>
+            <div className="text-[11px] text-black">Questions</div>
+          </div>
+          <div className="border-2 border-black rounded-lg px-2 py-2">
+            <div className="pixel-text text-xl font-extrabold text-[#ff008c]">
+              {levelNumber + 3}
+            </div>
+            <div className="text-[11px] text-black">Keys Needed</div>
+          </div>
         </div>
+      </div>
+
+      {/* FOOTER */}
+      <div className="flex justify-between items-end mt-4">
+        <img
+          src={wiseOwl}
+          className="h-16 object-contain drop-shadow-[0_0_12px_rgba(255,0,140,0.4)]"
+          alt="Professor Owl"
+        />
+
+        <button
+          onClick={next}
+          className="
+            px-4 py-2 
+            border-4 border-black 
+            bg-[#ff008c] text-white 
+            pixel-text text-xs 
+            rounded-lg 
+            hover:bg-[#e0007e]
+          "
+        >
+          {currentStep === pages.length - 1 ? "START LEVEL →" : "NEXT →"}
+        </button>
       </div>
     </div>
   );

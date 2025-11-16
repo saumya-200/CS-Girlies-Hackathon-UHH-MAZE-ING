@@ -1,3 +1,4 @@
+// src/components/game/MiniMap.tsx
 /**
  * Mini-map component - Shows revealed areas and player position
  */
@@ -7,13 +8,9 @@ import { TileType } from "../../types/game.types";
 
 interface MiniMapProps {
   size?: number;
-  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
 }
 
-export function MiniMap({
-  size = 150,
-  position = "bottom-right",
-}: MiniMapProps) {
+export function MiniMap({ size = 150 }: MiniMapProps) {
   const { maze, player, fog, path } = useGameStore();
 
   if (!maze || !maze.tiles) return null;
@@ -25,27 +22,26 @@ export function MiniMap({
   const actualWidth = mazeWidth * cellSize;
   const actualHeight = mazeHeight * cellSize;
 
-  const positionClasses: Record<string, string> = {
-    "bottom-right": "bottom-4 right-4",
-    "bottom-left": "bottom-4 left-4",
-    "top-right": "top-24 right-4",
-    "top-left": "top-24 left-4",
-  };
-
   return (
     <div
-      className={`fixed ${positionClasses[position]} z-30 bg-gray-900/85 backdrop-blur-md rounded-lg border-2 border-cyan-500/60 p-2 shadow-lg`}
+      className="
+        bg-white 
+        border-4 border-black 
+        rounded-xl 
+        p-2 
+        shadow-2xl
+      "
       style={{ width: actualWidth + 16, height: actualHeight + 32 }}
     >
-      <div className="text-xs text-cyan-300 mb-1 font-bold text-center tracking-wide">
-        Map
+      <div className="text-xs font-bold text-[#ff008c] mb-1 text-center tracking-wide pixel-text">
+        MAP
       </div>
+
       <svg
         width={actualWidth}
         height={actualHeight}
-        className="border border-gray-700 rounded bg-black/60"
+        className="border-2 border-black rounded bg-black"
       >
-        {/* Render maze cells */}
         {maze.tiles.map((row, y) =>
           row.map((tile, x) => {
             const key = `${x},${y}`;
@@ -67,12 +63,12 @@ export function MiniMap({
               );
             }
 
-            let fill = "#1f2937"; // default
+            let fill = "#1f2937";
 
             if (tile.type === TileType.WALL) {
-              fill = "#0f172a"; // darker = water region
+              fill = "#0f172a";
             } else if (tile.type === TileType.PATH) {
-              fill = "#16a34a"; // green-ish path
+              fill = "#16a34a";
             } else if (tile.type === TileType.GOAL) {
               fill = "#fbbf24";
             } else if (tile.type === TileType.QUIZ) {
@@ -115,7 +111,7 @@ export function MiniMap({
           })
         )}
 
-        {/* Player pulse (extra highlight) */}
+        {/* Player pulse */}
         <circle
           cx={player.position.x * cellSize + cellSize / 2}
           cy={player.position.y * cellSize + cellSize / 2}
@@ -133,7 +129,7 @@ export function MiniMap({
       </svg>
 
       {/* Legend */}
-      <div className="mt-1 text-[8px] text-gray-300 space-y-0.5">
+      <div className="mt-1 text-[8px] text-gray-900 space-y-0.5 pixel-text">
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 bg-cyan-400 rounded-full" />
           <span>You</span>

@@ -1,3 +1,4 @@
+// src/components/game/MazeCanvas.tsx
 // Main maze rendering component using Canvas
 
 import { useEffect, useRef } from "react";
@@ -55,46 +56,106 @@ export function MazeCanvas() {
     const width = rect.width;
     const height = rect.height;
 
-    // viewport in tiles (controls zoom)
-    const VIEW_TILES_X = 25;
-    const VIEW_TILES_Y = 18;
+    // PERFECT FULL-FIT VIEWPORT — NO BLACK GAPS
+const VIEW_TILES_X = 14;   // smaller = more zoom
+const VIEW_TILES_Y = 10;
 
-    const tileSize = Math.floor(
-      Math.min(width / VIEW_TILES_X, height / VIEW_TILES_Y)
-    );
+let tileSize = Math.floor(
+  Math.min(width / VIEW_TILES_X, height / VIEW_TILES_Y)
+);
 
-    // full background = pure black
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, width, height);
+// hard fail-safe: prevent dividing by zero
+if (tileSize < 1) tileSize = 1;
 
-    if (tileSize <= 0) return;
+// clear maze area
+ctx.clearRect(0, 0, width, height);
+ctx.fillStyle = "#000";
+ctx.fillRect(0, 0, width, height);
 
-    // camera follow player, clamped
-    const halfX = Math.floor(VIEW_TILES_X / 2);
-    const halfY = Math.floor(VIEW_TILES_Y / 2);
+// ==== CAMERA FOLLOW (clamped) ====
+const halfX = Math.floor(VIEW_TILES_X / 2);
+const halfY = Math.floor(VIEW_TILES_Y / 2);
 
-    let startX = player.position.x - halfX;
-    let startY = player.position.y - halfY;
+let startX = player.position.x - halfX;
+let startY = player.position.y - halfY;
 
-    if (startX < 0) startX = 0;
-    if (startY < 0) startY = 0;
-    if (startX + VIEW_TILES_X > maze.width)
-      startX = Math.max(0, maze.width - VIEW_TILES_X);
-    if (startY + VIEW_TILES_Y > maze.height)
-      startY = Math.max(0, maze.height - VIEW_TILES_Y);
+startX = Math.max(0, Math.min(startX, maze.width - VIEW_TILES_X));
+startY = Math.max(0, Math.min(startY, maze.height - VIEW_TILES_Y));
 
-    const endX = Math.min(maze.width, startX + VIEW_TILES_X);
-    const endY = Math.min(maze.height, startY + VIEW_TILES_Y);
+const endX = Math.min(maze.width, startX + VIEW_TILES_X);
+const endY = Math.min(maze.height, startY + VIEW_TILES_Y);
 
-    const visibleWidthTiles = endX - startX;
-    const visibleHeightTiles = endY - startY;
+const tilesWide = endX - startX;
+const tilesHigh = endY - startY;
 
-    const gridWidthPx = visibleWidthTiles * tileSize;
-    const gridHeightPx = visibleHeightTiles * tileSize;
+// ==== FULL CENTERING (Fixes empty space problem) ====
+const gridWidthPx = tilesWide * tileSize;
+const gridHeightPx = tilesHigh * tileSize;
 
-    const groundImg = groundImageRef.current;
-    const waterImg = waterImageRef.current;
+const offsetX = (width - gridWidthPx) / 2;   // centers horizontally
+const offsetY = (height - gridHeightPx) / 2; // centers vertically
+
+// ==== DRAW TILES — ALL positions adjusted by offsets ====
+const groundImg = groundImageRef.current;
+const waterImg = waterImageRef.current;
+
+for (let y = startY; y < endY; y++) {
+  for (let x = startX; x < endX; x++) {
+
+    const screenX = offsetX + (x - startX) * tileSize;
+    const screenY = offsetY + (y - startY) * tileSize;
+
+    const tile = maze.tiles[y][x];
+    const key = `${x},${y}`;
+
+    // Determine tile color logic (same as your current logic)
+    let color = TILE_COLORS.WALL;
+    switch (tile.type) {
+      case TileType.PATH:
+        color = TILE_COLORS.PATH;
+        break;
+      case TileType.QUIZ:
+        if (tile.isAnswered && tile.answeredCorrectly) color = TILE_COLORS.QUIZ_CORRECT;
+        else if (tile.isAnswered) color = TILE_COLORS.QUIZ_INCORRECT;
+        else color = TILE_COLORS.QUIZ;
+        break;
+      case TileType.START:
+        color = TILE_COLORS.START;
+        break;
+      case TileType.GOAL:
+        color = TILE_COLORS.GOAL;
+        break;
+    }
+
+    // ===== TEXTURE DRAW =====
+    if (tile.type === TileType.PATH && groundImg?.complete) {
+      ctx.drawImage(groundImg, screenX, screenY, tileSize, tileSize);
+    } else if (tile.type === TileType.WALL && waterImg?.complete) {
+      ctx.drawImage(waterImg, screenX, screenY, tileSize, tileSize);
+    } else {
+      ctx.fillStyle = color;
+      ctx.fillRect(screenX, screenY, tileSize, tileSize);
+    }
+
+    // grid line
+    ctx.strokeStyle = "#1f2937";
+    ctx.strokeRect(screenX, screenY, tileSize, tileSize);
+
+    // ===== FOG (same logic) =====
+    if (!fog.revealedTiles.has(key)) {
+      ctx.fillStyle = "rgba(0,0,0,1)";
+      ctx.fillRect(screenX, screenY, tileSize, tileSize);
+      continue;
+    }
+
+    const fogAlpha = fog.fogOpacity[key] ?? 0;
+    if (fogAlpha > 0) {
+      ctx.fillStyle = `rgba(0,0,0,${fogAlpha})`;
+      ctx.fillRect(screenX, screenY, tileSize, tileSize);
+    }
+
+  }
+}
 
     // ===== DRAW TILES =====
     for (let y = startY; y < endY; y++) {
@@ -154,7 +215,6 @@ export function MazeCanvas() {
 
         // ===== FOG =====
         if (!fog.revealedTiles.has(key)) {
-          // unrevealed = pure black
           ctx.fillStyle = "rgba(0,0,0,1)";
           ctx.fillRect(screenX, screenY, tileSize, tileSize);
         } else {
@@ -164,7 +224,6 @@ export function MazeCanvas() {
             ctx.fillRect(screenX, screenY, tileSize, tileSize);
           }
 
-          // icons when mostly visible
           if (opacity < 0.3) {
             if (tile.type === TileType.QUIZ) {
               ctx.save();
@@ -225,8 +284,6 @@ export function MazeCanvas() {
     // ===== PATH TRAIL (clipped to maze grid) =====
     if (path.visitedPath.length > 1) {
       ctx.save();
-
-      // clip to actual maze area so trail never goes outside grid
       ctx.beginPath();
       ctx.rect(0, 0, gridWidthPx, gridHeightPx);
       ctx.clip();
@@ -258,7 +315,6 @@ export function MazeCanvas() {
       }
       ctx.stroke();
 
-      // sparkles
       for (let i = 0; i < path.visitedPath.length; i += 2) {
         const p = path.visitedPath[i];
         const sx = (p.x - startX) * tileSize + tileSize / 2;

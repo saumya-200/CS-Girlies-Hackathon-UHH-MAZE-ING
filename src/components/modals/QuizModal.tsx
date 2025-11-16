@@ -1,7 +1,5 @@
-// Quiz modal component for displaying questions
-// Now used as an INLINE question panel above the maze (no full-screen overlay)
-
-import { useState } from "react";
+// src/components/modals/QuizModal.tsx
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { Question } from "../../types/content.types";
 
@@ -24,7 +22,9 @@ export function QuizModal({
 }: QuizModalProps) {
   const { t } = useTranslation();
 
-  // Use question.id as key to auto-reset state
+  // Safety: don't render if not visible or question missing
+  if (!isVisible || !question) return null;
+
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [userAnswer, setUserAnswer] = useState("");
   const [attempts, setAttempts] = useState(0);
@@ -33,18 +33,25 @@ export function QuizModal({
   const [isCorrect, setIsCorrect] = useState(false);
   const [currentQuestionId, setCurrentQuestionId] = useState(question.id);
 
-  // Reset when question changes
-  if (currentQuestionId !== question.id) {
-    setCurrentQuestionId(question.id);
-    setSelectedAnswer("");
-    setUserAnswer("");
-    setAttempts(0);
-    setShowHint(false);
-    setShowResult(false);
-    setIsCorrect(false);
-  }
+  // Reset all local state when question changes
+  useEffect(() => {
+    if (currentQuestionId !== question.id) {
+      setCurrentQuestionId(question.id);
+      setSelectedAnswer("");
+      setUserAnswer("");
+      setAttempts(0);
+      setShowHint(false);
+      setShowResult(false);
+      setIsCorrect(false);
+    }
+  }, [question.id, currentQuestionId]);
 
-  if (!isVisible) return null;
+  const canSubmit = () => {
+    if (question.type === "short_answer") {
+      return userAnswer.trim().length > 0;
+    }
+    return selectedAnswer.length > 0;
+  };
 
   const handleSubmit = () => {
     const newAttempts = attempts + 1;
@@ -53,14 +60,19 @@ export function QuizModal({
     let correct = false;
 
     if (question.type === "multiple_choice") {
-      const selectedIndex = question.options?.indexOf(selectedAnswer) ?? -1;
-      correct = selectedIndex === question.correctAnswer;
+      const idx = (question.options || []).indexOf(selectedAnswer);
+      correct = idx === question.correctAnswer;
     } else if (question.type === "short_answer") {
-      const correctAnswerStr = String(question.correctAnswer);
       correct =
-        userAnswer.trim().toLowerCase() === correctAnswerStr.toLowerCase();
+        userAnswer.trim().toLowerCase() ===
+        String(question.correctAnswer).trim().toLowerCase();
     } else if (question.type === "true_false") {
-      correct = selectedAnswer === question.correctAnswer;
+      const userBool = selectedAnswer === "true";
+      const correctBool =
+        typeof question.correctAnswer === "boolean"
+          ? question.correctAnswer
+          : String(question.correctAnswer) === "true";
+      correct = userBool === correctBool;
     }
 
     setIsCorrect(correct);
@@ -72,230 +84,248 @@ export function QuizModal({
     }, 3000);
   };
 
-  const handleHint = () => {
-    setShowHint(true);
+  const getDisplayCorrectAnswer = () => {
+    if (question.type === "true_false") {
+      const v = question.correctAnswer;
+      if (typeof v === "boolean") return v ? "True" : "False";
+      return String(v) === "true" ? "True" : "False";
+    }
+
+    if (question.type === "multiple_choice" && question.options) {
+      const idx = question.correctAnswer as number;
+      return question.options[idx] ?? `Option ${idx + 1}`;
+    }
+
+    return String(question.correctAnswer);
   };
 
-  const canSubmit = () => {
-    if (question.type === "short_answer") {
-      return userAnswer.trim().length > 0;
-    }
-    return selectedAnswer.length > 0;
-  };
+  const displayOptions =
+    question.type === "multiple_choice"
+      ? question.options && question.options.length > 0
+        ? question.options
+        : ["A", "B", "C", "D"]
+      : [];
 
   return (
-    <div className="w-full bg-white border border-gray-300 rounded-xl shadow-xl px-6 py-4 text-gray-900">
-      {!showResult ? (
-        <>
-          {/* Header with progress & meta */}
-          <div className="mb-4">
-            {/* Progress Bar */}
-            <div className="mb-3">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>
-                  Question {currentQuestionNumber} of {totalQuestions}
-                </span>
-                <span>
-                  {Math.round(
-                    (currentQuestionNumber / totalQuestions) * 100
-                  )}
-                  %
-                </span>
+    <>
+      {/* Dark overlay */}
+      <div
+        className="fixed inset-0 bg-black bg-opacity-70 z-40"
+        aria-hidden="true"
+      />
+
+      {/* Centered pixel panel */}
+      <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+        <div className="bg-white border-4 border-black rounded-xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden pixel-panel">
+          {!showResult ? (
+            <>
+              {/* HEADER */}
+              <div className="p-6 pb-4">
+                {/* Progress */}
+                <div className="mb-4">
+                  <div className="flex justify-between text-xs mb-1 pixel-text">
+                    <span>
+                      Q {currentQuestionNumber}/{totalQuestions}
+                    </span>
+                    <span>
+                      {Math.round(
+                        (currentQuestionNumber / totalQuestions) * 100
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className="w-full bg-black rounded-full h-2">
+                    <div
+                      className="h-2 bg-[#ff008c] rounded-full transition-all duration-500"
+                      style={{
+                        width: `${
+                          (currentQuestionNumber / totalQuestions) * 100
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Topic + difficulty */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-bold uppercase tracking-wider pixel-text">
+                    {question.topic}
+                  </span>
+                  <span className="text-xs pixel-text">
+                    {t("quiz.difficulty", {
+                      level: question.difficulty,
+                    })}
+                  </span>
+                </div>
+
+                <h2 className="text-2xl font-bold pixel-text">QUESTION</h2>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-gradient-to-r from-emerald-500 to-sky-500 h-2 rounded-full transition-all duration-500"
-                  style={{
-                    width: `${(currentQuestionNumber / totalQuestions) * 100}%`,
-                  }}
-                />
+
+              {/* PROMPT */}
+              <div className="bg-gray-100 rounded-lg p-5 mx-6 mb-6 border-2 border-black">
+                <p className="text-lg pixel-text leading-relaxed">
+                  {question.prompt}
+                </p>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold uppercase text-sky-600">
-                {question.topic}
-              </span>
-              <span className="text-[11px] text-gray-500">
-                {t("quiz.difficulty", { level: question.difficulty })}
-              </span>
-            </div>
+              {/* ANSWER AREA */}
+              <div className="px-6 pb-6">
+                {question.type === "multiple_choice" && (
+                  <div className="space-y-3">
+                    {displayOptions.map((opt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedAnswer(opt)}
+                        className={`
+                          w-full text-left p-4 rounded-lg border-4 border-black bg-white pixel-text transition-all
+                          ${
+                            selectedAnswer === opt
+                              ? "bg-[#ffe0f4]"
+                              : ""
+                          }
+                        `}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-            <h2 className="text-lg font-bold text-gray-900">
-              {t("quiz.questionLabel")}
-            </h2>
-          </div>
+                {question.type === "short_answer" && (
+                  <input
+                    type="text"
+                    value={userAnswer}
+                    onChange={(e) => setUserAnswer(e.target.value)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && canSubmit() && handleSubmit()
+                    }
+                    placeholder="Type your answer..."
+                    className="w-full p-4 rounded-lg border-4 border-black bg-white pixel-text outline-none text-base"
+                    autoFocus
+                  />
+                )}
 
-          {/* Question prompt */}
-          <div className="bg-gray-50 rounded-lg border border-gray-200 p-3 mb-4">
-            <p className="text-base text-gray-900 leading-relaxed">
-              {question.prompt}
-            </p>
-          </div>
-
-          {/* Answer options based on type */}
-          <div className="mb-4">
-            {question.type === "multiple_choice" && question.options && (
-              <div className="space-y-2">
-                {question.options.map((option, index) => {
-                  const isSelected = selectedAnswer === option;
-                  return (
+                {question.type === "true_false" && (
+                  <div className="grid grid-cols-2 gap-4">
                     <button
-                      key={index}
-                      type="button"
-                      onClick={() => setSelectedAnswer(option)}
-                      className={`w-full text-left p-3 rounded-lg border transition-all duration-150 ${
-                        isSelected
-                          ? "border-sky-500 bg-sky-50 shadow-sm"
-                          : "border-gray-300 bg-white hover:border-gray-400"
-                      }`}
+                      onClick={() => setSelectedAnswer("true")}
+                      className={`
+                        p-6 rounded-lg border-4 border-black bg-white pixel-text text-lg font-bold
+                        ${
+                          selectedAnswer === "true"
+                            ? "bg-[#ffe0f4]"
+                            : ""
+                        }
+                      `}
                     >
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={`text-sm ${
-                            isSelected
-                              ? "text-gray-900 font-semibold"
-                              : "text-gray-800"
-                          }`}
-                        >
-                          {option}
-                        </span>
-                        {isSelected && (
-                          <span className="text-sky-500 text-base">✓</span>
-                        )}
-                      </div>
+                      TRUE
                     </button>
-                  );
-                })}
+                    <button
+                      onClick={() => setSelectedAnswer("false")}
+                      className={`
+                        p-6 rounded-lg border-4 border-black bg-white pixel-text text-lg font-bold
+                        ${
+                          selectedAnswer === "false"
+                            ? "bg-[#ffe0f4]"
+                            : ""
+                        }
+                      `}
+                    >
+                      FALSE
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
 
-            {question.type === "short_answer" && (
-              <div>
-                <input
-                  type="text"
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && canSubmit() && handleSubmit()
-                  }
-                  placeholder="Type your answer here..."
-                  className="w-full p-3 rounded-lg border border-gray-300 text-sm text-gray-900 placeholder-gray-400 focus:border-sky-500 focus:outline-none"
-                  autoFocus
-                />
-              </div>
-            )}
-
-            {question.type === "true_false" && (
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedAnswer("true")}
-                  className={`flex-1 p-4 rounded-lg border text-center transition-all ${
-                    selectedAnswer === "true"
-                      ? "border-emerald-500 bg-emerald-50"
-                      : "border-gray-300 bg-white hover:border-gray-400"
-                  }`}
-                >
-                  <span className="text-xl mb-1 block">✓</span>
-                  <span className="text-sm font-semibold text-gray-800">
-                    True
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedAnswer("false")}
-                  className={`flex-1 p-4 rounded-lg border text-center transition-all ${
-                    selectedAnswer === "false"
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-300 bg-white hover:border-gray-400"
-                  }`}
-                >
-                  <span className="text-xl mb-1 block">✗</span>
-                  <span className="text-sm font-semibold text-gray-800">
-                    False
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Hint section */}
-          {question.hint && (
-            <div className="mb-3">
-              {!showHint ? (
-                <button
-                  type="button"
-                  onClick={handleHint}
-                  className="text-xs text-sky-600 hover:text-sky-500 underline"
-                >
-                  💡 Need a hint?
-                </button>
-              ) : (
-                <div className="bg-sky-50 border border-sky-200 rounded-lg p-2">
-                  <p className="text-xs text-sky-800">
-                    <strong>Hint:</strong> {question.hint}
-                  </p>
+              {/* HINT */}
+              {question.hint && (
+                <div className="px-6 pb-4">
+                  {!showHint ? (
+                    <button
+                      onClick={() => setShowHint(true)}
+                      className="text-sm text-blue-600 underline pixel-text"
+                    >
+                      💡 Need a hint?
+                    </button>
+                  ) : (
+                    <div className="bg-blue-100 border-2 border-blue-600 rounded-lg p-3">
+                      <p className="text-sm pixel-text">
+                        <strong>Hint:</strong> {question.hint}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Attempts counter */}
-          {attempts > 0 && (
-            <p className="text-xs text-gray-500 mb-2">
-              Attempts: {attempts}
-            </p>
-          )}
+              {/* Attempts */}
+              {attempts > 0 && (
+                <p className="text-center text-sm pixel-text px-6 pb-3">
+                  Attempts: {attempts}
+                </p>
+              )}
 
-          {/* Submit button */}
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit()}
-            className="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg bg-sky-600 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-sky-700 transition-colors"
-          >
-            Submit Answer
-          </button>
-        </>
-      ) : (
-        // Result screen
-        <div className="text-center py-4">
-          {isCorrect ? (
-            <>
-              <div className="text-4xl mb-2">🎉</div>
-              <h2 className="text-xl font-bold text-emerald-600 mb-2">
-                Correct!
-              </h2>
-              <p className="text-sm text-gray-800 mb-3">
-                {question.explanation}
-              </p>
-              <div className="text-sm text-sky-600 font-semibold">
-                +{Math.max(100 - (attempts - 1) * 25, 25)} points
+              {/* SUBMIT BUTTON */}
+              <div className="px-6 pb-6">
+                <button
+                  onClick={handleSubmit}
+                  disabled={!canSubmit()}
+                  className={`
+                    w-full py-3 px-4 rounded-lg border-4 border-black text-white font-bold pixel-text text-lg
+                    ${
+                      canSubmit()
+                        ? "bg-[#ff008c] hover:bg-[#e0007a]"
+                        : "bg-gray-500 cursor-not-allowed"
+                    }
+                  `}
+                >
+                  SUBMIT
+                </button>
               </div>
             </>
           ) : (
-            <>
-              <div className="text-4xl mb-2">😅</div>
-              <h2 className="text-xl font-bold text-red-500 mb-2">
-                Incorrect
-              </h2>
-              <p className="text-sm text-gray-800 mb-2">
-                <strong>Correct answer:</strong> {question.correctAnswer}
+            // RESULT SCREEN
+            <div className="text-center py-10 px-6">
+              {isCorrect ? (
+                <>
+                  <div className="text-6xl mb-4">🎉</div>
+                  <h2 className="text-3xl font-bold text-green-600 mb-4 pixel-text">
+                    CORRECT!
+                  </h2>
+                  <p className="text-gray-800 mb-6 pixel-text leading-relaxed">
+                    {question.explanation}
+                  </p>
+                  <div className="text-xl text-[#ff008c] font-bold pixel-text">
+                    +{Math.max(100 - (attempts - 1) * 25, 25)} points
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-6xl mb-4">😅</div>
+                  <h2 className="text-3xl font-bold text-red-600 mb-4 pixel-text">
+                    INCORRECT
+                  </h2>
+                  <p className="text-gray-800 mb-4 pixel-text">
+                    <strong>Correct answer:</strong>{" "}
+                    <span className="font-bold">
+                      {getDisplayCorrectAnswer()}
+                    </span>
+                  </p>
+                  <p className="text-gray-600 text-sm mb-6 pixel-text leading-relaxed">
+                    {question.explanation}
+                  </p>
+                  <div className="text-lg text-gray-500 pixel-text">
+                    Try again next time!
+                  </div>
+                </>
+              )}
+
+              <p className="text-sm text-gray-500 mt-8 pixel-text">
+                Closing in 3 seconds...
               </p>
-              <p className="text-xs text-gray-600 mb-3">
-                {question.explanation}
-              </p>
-              <div className="text-sm text-gray-500">
-                Try again next time!
-              </div>
-            </>
+            </div>
           )}
-          <p className="text-xs text-gray-400 mt-3">
-            Closing in 3 seconds...
-          </p>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

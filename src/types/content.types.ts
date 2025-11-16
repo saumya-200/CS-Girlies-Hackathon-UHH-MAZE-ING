@@ -21,7 +21,7 @@ export interface Question {
   type: QuestionType;
   prompt: string;
   options?: string[]; // For multiple choice
-  correctAnswer: string | number;
+  correctAnswer: string | number | boolean;
   hint: string;
   explanation: string;
   difficulty: number; // 1-5
