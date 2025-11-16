@@ -82,7 +82,7 @@ export function SettingsModal({ isVisible, onClose }: SettingsModalProps) {
         {/* SCORE BOXES */}
         <div className="mb-6">
           <h3 className="text-lg font-bold text-[#ff008c] mb-3">
-            📊 {t("settings.progress.title")}
+            {t("settings.progress.title")}
           </h3>
 
           <div className="grid grid-cols-2 gap-4">
@@ -105,7 +105,7 @@ export function SettingsModal({ isVisible, onClose }: SettingsModalProps) {
         {/* CHARACTER NAME */}
         <div className="mb-6">
           <h3 className="text-lg font-bold text-[#ff008c] mb-3">
-            🧑 {t("settings.characterName")}
+            {t("settings.characterName")}
           </h3>
 
           {!isEditingName ? (
@@ -148,7 +148,7 @@ export function SettingsModal({ isVisible, onClose }: SettingsModalProps) {
         {/* LANGUAGE SELECT */}
         <div className="mb-6">
           <h3 className="text-lg font-bold text-[#ff008c] mb-3">
-            🌐 {t("settings.language.label")}
+            {t("settings.language.label")}
           </h3>
 
           <div className="grid grid-cols-2 gap-3">

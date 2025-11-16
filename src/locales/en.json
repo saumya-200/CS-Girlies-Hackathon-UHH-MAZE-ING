@@ -30,7 +30,7 @@
 
   "instructor": {
     "title": "Meet Your Guide",
-    "introduction": "\"Welcome, {{name}}! I'm Professor MindAI, your guide through the fascinating world of Machine Learning!\"",
+    "introduction": "\"Welcome, {{name}}! I'm Miss Hootsworth, your guide through the fascinating world of Machine Learning!\"",
     "instructions": {
       "title": "Game Instructions",
       "controls": "Use WASD or Arrow Keys to navigate the maze",

@@ -30,7 +30,7 @@
 
   "instructor": {
     "title": "Rencontrez Votre Guide",
-    "introduction": "\"Bienvenue, {{name}} ! Je suis le Professeur MindAI, votre guide dans le monde fascinant du Machine Learning !\"",
+    "introduction": "\"Bienvenue, {{name}} ! Je suis le Miss Hootsworth, votre guide dans le monde fascinant du Machine Learning !\"",
     "instructions": {
       "title": "Instructions du Jeu",
       "controls": "Utilisez WASD ou les flèches pour naviguer dans le labyrinthe",

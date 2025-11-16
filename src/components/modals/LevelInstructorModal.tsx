@@ -28,8 +28,7 @@ export function LevelInstructorModal({
   const pages = [
     {
       title: `${displayName}, let's tackle ${topicName}!`,
-      content: `Professor MindAI here to guide you through ${topicName} Level ${levelNumber}.`,
-      icon: "👨‍🏫",
+      content: `Miss Hootsworth here to guide you through ${topicName} Level ${levelNumber}.`,
       type: "Introduction",
     },
     {

@@ -19,7 +19,7 @@ export function InstructorTutorialModal({
         <h2 className="text-xl font-bold text-[#ff008c] mb-3">Welcome!</h2>
 
         <p className="mb-4">
-          Hello <strong>{characterName}</strong>! I’m Professor MindAI.
+          Hello <strong>{characterName}</strong>! I’m Miss Hootsworth.
           Let’s explore the ML Maze and learn ML concepts together.
         </p>
 

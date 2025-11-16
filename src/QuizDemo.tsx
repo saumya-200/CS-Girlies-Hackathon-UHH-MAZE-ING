@@ -22,6 +22,12 @@ import { TileType } from "./types/game.types";
 import { InstructorTutorialModal } from "./components/modals/InstructorTutorialModal";
 import { LevelInstructorModal } from "./components/modals/LevelInstructorModal";
 
+import { LevelPdfViewer } from "./components/LevelPdfViewer";
+
+import settingsIcon from "./assets/icons/settings.png";
+import homeIcon from "./assets/icons/home.png";
+import backIcon from "./assets/icons/back.png";
+
 type MazeMode = "stream-map" | "level-map" | "playing-level" | "results";
 
 const REQUIRED_CORRECT = 5;
@@ -321,31 +327,31 @@ export default function QuizDemo() {
   return (
     <div className="min-h-screen flex flex-col bg-pink-500">
       {/* HEADER */}
-<header className="bg-pink-500 text-white p-4 border-b border-pink-600">
-  <div className="flex items-center justify-between w-full">
+   <header className="bg-pink-500 text-white py-4 border-b border-pink-600">
+  <div className="flex items-center justify-between w-full px-4">
 
-    {/* LEFT BUTTONS */}
-    <div className="flex items-center gap-3" style={{ fontSize: "3rem" }}>
+    {/* LEFT BUTTONS — EMOJIS */}
+    <div className="flex items-center gap-6 text-3xl select-none">
+
+      {/* SETTINGS */}
       <button
         onClick={() => setShowSettings(true)}
-        className="w-12 h-12 flex items-center justify-center 
-                   bg-black/60 hover:bg-black rounded-lg 
-                   border-2 border-white text-2xl shadow pixel-text"
-                   style={{ fontSize: "3rem" }}
+        className="hover:scale-125 transition-transform"
+        style={{ fontSize: "3rem", lineHeight: "1" }}
       >
-        ⚙
+        ⚙️
       </button>
 
+      {/* HOME */}
       <button
         onClick={handleMainMenu}
-        className="w-12 h-12 flex items-center justify-center 
-                   bg-black/60 hover:bg-black rounded-lg 
-                   border-2 border-white text-2xl shadow pixel-text"
-                   style={{ fontSize: "3rem" }}
+        className="hover:scale-125 transition-transform"
+        style={{ fontSize: "3rem", lineHeight: "1" }}
       >
         🏠
       </button>
 
+      {/* BACK */}
       {(mazeMode === "level-map" || mazeMode === "playing-level") && (
         <button
           onClick={
@@ -353,11 +359,10 @@ export default function QuizDemo() {
               ? handleBackToStreams
               : handleBackToLevelMap
           }
-          className="w-12 h-12 flex items-center justify-center 
-                     bg-black/60 hover:bg-black rounded-lg 
-                     border-2 border-white text-2xl shadow pixel-text"
+          className="hover:scale-125 transition-transform"
+          style={{ fontSize: "3rem", lineHeight: "1" }}
         >
-          ⬅
+          ⬅️
         </button>
       )}
     </div>
@@ -366,28 +371,28 @@ export default function QuizDemo() {
     <h1
       className="
         font-extrabold text-cyan-300 tracking-[0.18em]
-        pixel-text animate-pulse text-center leading-none
+        pixel-text animate-pulse text-center leading-none select-none
       "
       style={{
-        fontSize: "6rem",
+        fontSize: "5rem",
         lineHeight: "0.8",
         textShadow:
-          "0 0 50px rgba(0,255,255,1), 0 0 120px rgba(0,255,255,0.8)",
+          '0 0 40px rgba(0,255,255,1), 0 0 80px rgba(0,255,255,0.8)',
       }}
     >
       UHH-MAZE-ING
     </h1>
 
     {/* RIGHT HEARTS */}
-    <div className="flex items-center justify-end w-32 text-6xl" style={{ fontSize: "3rem" }}>
+    <div
+      className="flex items-center justify-end w-32"
+      style={{ fontSize: "3rem", lineHeight: "1" }}
+    >
       ❤️❤️❤️❤️❤️
     </div>
 
   </div>
 </header>
-
-
-
 
 
       {/* MAIN */}
@@ -404,7 +409,7 @@ export default function QuizDemo() {
               )}
             </div>
             <div className="text-xs text-white/70">
-              {sessionStartTime > 0 && `Time: ${getTimeSpent()}s`}
+              {sessionStartTime > 0 && `Time: {getTimeSpent()}s`}
             </div>
           </div>
 
@@ -415,12 +420,11 @@ export default function QuizDemo() {
             </div>
           )}
 
-          {/* MAZE + OWL PANEL ROW */}
+          {/* MAZE + LEFT PANEL ROW */}
           <div className="flex w-full h-[70vh] gap-4">
-            {/* LEFT PANEL — ALWAYS SOLID WHITE */}
-            <div id="left-owl-panel" className="w-[35%] h-full rounded-lg overflow-hidden" >
-
-              {showLevelInstructor && (
+            {/* LEFT PANEL — OWL FIRST, THEN PDF */}
+            <div className="w-[35%] h-full rounded-lg overflow-hidden bg-white border-[6px] border-[#ff008c] shadow-2xl">
+              {showLevelInstructor ? (
                 <LevelInstructorModal
                   isVisible={showLevelInstructor}
                   topicName={currentTopic?.name || ""}
@@ -438,6 +442,12 @@ export default function QuizDemo() {
                     setTimeout(() => loadQuizMaze(levelNum), 100);
                   }}
                 />
+              ) : mazeMode === "playing-level" ? (
+                <LevelPdfViewer />
+              ) : (
+                <div className="h-full flex items-center justify-center px-4 text-center text-xs text-gray-500 pixel-text">
+                  Walk into a level to see its guide here.
+                </div>
               )}
             </div>
 
@@ -474,9 +484,7 @@ export default function QuizDemo() {
             <h3 className="text-xl font-bold text-white mb-4">
               {goalUnlocked ? "Level Complete!" : "Try Again!"}
             </h3>
-            <p className="text-gray-300 mb-4">
-              Score: {currentScore}
-            </p>
+            <p className="text-gray-300 mb-4">Score: {currentScore}</p>
             {goalUnlocked && (
               <p className="text-green-400 mb-4">
                 Goal Unlocked! PDF is downloading...
