@@ -12,10 +12,9 @@ export interface Topic {
 }
 
 export const ML_TOPICS: Topic[] = [
-  { id: 'linear-regression', name: 'Linear Regression', icon: '📊', levels: 3, color: '#3b82f6' },
-  { id: 'logistic-regression', name: 'Logistic Regression', icon: '🔀', levels: 3, color: '#10b981' },
-  { id: 'loss-functions', name: 'Loss Functions', icon: '📈', levels: 2, color: '#f59e0b' },
-  { id: 'gradient-descent', name: 'Gradient Descent', icon: '⬇️', levels: 3, color: '#06b6d4' },
-  { id: 'neural-networks', name: 'Neural Networks', icon: '🧠', levels: 4, color: '#8b5cf6' },
-  { id: 'decision-trees', name: 'Decision Trees', icon: '🌳', levels: 2, color: '#ec4899' },
+  { id: 'introduction-to-ml', name: 'Introduction to ML', icon: '📊', levels: 3, color: '#3b82f6' },
+  { id: 'working-with-data', name: 'Working with Data', icon: '🔀', levels: 3, color: '#10b981' },
+  { id: 'supervised-learning-basics', name: 'Supervised Learning Basics', icon: '📈', levels: 3, color: '#f59e0b' },
+  { id: 'unsupervised-learning-basics', name: 'Unsupervised Learning Basics', icon: '⬇️', levels: 3, color: '#06b6d4' },
+  { id: 'environmental-impact-of-ml', name: 'Environmental Impact of ML', icon: '🧠', levels: 2, color: '#8b5cf6' },
 ];

@@ -172,3 +172,6 @@ export const PROGRESSION = {
   CLUSTER_SIZE: 3, // levels per cluster
   LIVES_PER_CLUSTER: 5,
 };
+
+// src/utils/constants.ts
+export const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
