@@ -1,0 +1,220 @@
+/* -------------------------------------------------------
+   TAILWIND
+-------------------------------------------------------- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------------------------------------------------------
+   PIXEL FONT (GBA-style)
+-------------------------------------------------------- */
+@font-face {
+  font-family: "GBA";
+  src: url("/src/assets/fonts/pixel.ttf") format("truetype");
+}
+
+/* Pixel font utility */
+.pixel-text {
+  font-family: "GBA", "Press Start 2P", "VT323", monospace !important;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: none;
+  color: #ff008c !important; /* HOT PINK */
+}
+
+/* Pixel question panel */
+.pixel-panel {
+  background: white !important;
+  border: 4px solid black !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  box-shadow: none !important;
+}
+
+/* -------------------------------------------------------
+   GLOBAL PAGE BACKGROUND
+-------------------------------------------------------- */
+body {
+  background-color: #111827;
+
+  /* pixel art BG (modify path if needed) */
+  background-image: url("./assets/background/background.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
+  color: #f3f4f6;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------
+   BUTTON UTILITIES
+-------------------------------------------------------- */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: 0.2s;
+  outline: none;
+}
+
+.btn:focus {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background-color: #0284c7;
+  color: white;
+}
+.btn-primary:hover {
+  background-color: #0369a1;
+}
+
+.btn-secondary {
+  background-color: #c026d3;
+  color: white;
+}
+.btn-secondary:hover {
+  background-color: #a21caf;
+}
+
+.btn-success {
+  background-color: #10b981;
+  color: white;
+}
+.btn-success:hover {
+  background-color: #059669;
+}
+
+.btn-error {
+  background-color: #ef4444;
+  color: white;
+}
+.btn-error:hover {
+  background-color: #dc2626;
+}
+
+/* -------------------------------------------------------
+   CARDS & MODALS
+-------------------------------------------------------- */
+.card {
+  background-color: #1f2937;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+}
+
+.modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #1f2937;
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 2rem;
+  z-index: 50;
+  max-width: 42rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* -------------------------------------------------------
+   MISC UTILITIES
+-------------------------------------------------------- */
+.text-glow {
+  text-shadow: 0 0 10px currentColor;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-scrollbar {
+  scrollbar-color: #4b5563 #1f2937;
+  scrollbar-width: thin;
+}
+
+/* === FIX TUTORIAL POPUP === */
+
+.tutorial-panel {
+  background: white !important;
+  border: 4px solid black !important;
+  border-radius: 18px !important;
+
+  padding: 24px !important;
+  width: 90% !important;
+  max-width: 480px !important;
+
+  position: absolute !important;
+  top: 120px !important;
+  left: 40px !important;
+
+  z-index: 99999 !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+
+  /* readable text */
+  color: #222 !important;
+
+  /* font improvements */
+  font-family: "GBA", "Press Start 2P", "VT323", monospace !important;
+  image-rendering: pixelated;
+}
+
+.tutorial-panel button {
+  background: black !important;
+  color: white !important;
+  border: 3px solid #ff008c !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-family: inherit !important;
+}
+
+/* FORCE LEFT OWL PANEL ALWAYS WHITE */
+#left-owl-panel {
+  background: white !important;
+  border: 6px solid black !important;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-image: url('/src/assets/background/background.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}

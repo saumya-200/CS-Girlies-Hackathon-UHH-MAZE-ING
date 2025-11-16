@@ -1,0 +1,153 @@
+{
+  "common": {
+    "close": "Close",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "back": "Back",
+    "next": "Next",
+    "start": "Start",
+    "retry": "Retry",
+    "settings": "Settings",
+    "menu": "Menu",
+    "language": "Language",
+    "sound": "Sound",
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+
+  "welcome": {
+    "title": "Welcome to ML Maze Quest!",
+    "subtitle": "Your AI-Powered Machine Learning Adventure",
+    "enterName": "Enter Your Character Name:",
+    "placeholder": "Hero's Name",
+    "hint": "Your brave name for this ML journey",
+    "startJourney": "Start Journey!"
+  },
+
+  "instructor": {
+    "title": "Meet Your Guide",
+    "introduction": "\"Welcome, {{name}}! I'm Miss Hootsworth, your guide through the fascinating world of Machine Learning!\"",
+    "instructions": {
+      "title": "Game Instructions",
+      "controls": "Use WASD or Arrow Keys to navigate the maze",
+      "objective": "Answer quiz questions to collect keys and reach the goal",
+      "topics": "Choose from various ML topics, each with multiple levels",
+      "lives": "You have 3 lives. Incorrect answers or failed levels cost a life",
+      "learning": "Study material appears before each level to help you learn",
+      "progression": "Complete easier levels to unlock harder ones"
+    },
+    "letsBegin": "Let's Begin Your ML Learning Adventure!",
+    "skipTutorial": "Skip Tutorial"
+  },
+
+  "game": {
+    "title": "ML Maze Quest",
+    "lives": "Lives",
+    "score": "Score",
+    "keys": "Keys",
+    "topic": "Topic",
+    "level": "Level",
+    "progress": "Progress"
+  },
+
+  "navigation": {
+    "mainMenu": "Main Menu",
+    "backToSubjects": "Back to Subjects",
+    "backToLevels": "Back to Levels",
+    "backToMenu": "Back to Menu",
+    "viewProgress": "View Progress",
+    "howToPlay": "How to Play",
+    "restartGame": "Restart Game",
+    "continue": "Continue"
+  },
+
+  "settings": {
+    "title": "Settings",
+    "language.label": "Language:",
+    "characterName": "Character Name",
+    "editName": "Edit",
+    "soundEffects": "Sound Effects",
+    "progress.title": "Your Progress",
+    "progress.totalScore": "Total Score",
+    "progress.levelsCompleted": "Levels Completed"
+  },
+
+  "languages": {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "hi": "Hindi"
+  },
+
+  "learningContent": {
+    "loading": "Loading learning content...",
+    "error": "Failed to load learning content. Please try again.",
+    "retry": "Retry",
+    "skip": "Skip to Quiz",
+    "startQuiz": "Start Quiz"
+  },
+
+  "quiz": {
+    "question": "Question",
+    "submit": "Submit Answer",
+    "hint": "Hint",
+    "needHint": "💡 Need a hint?",
+    "attempts": "Attempts",
+    "correct": "Correct!",
+    "incorrect": "Incorrect",
+    "explanation": "Explanation",
+    "pointsEarned": "+{{points}} points",
+    "tryAgain": "Try again next time!",
+    "closingIn": "Closing in 3 seconds..."
+  },
+
+  "results": {
+    "levelComplete": "Level Complete!",
+    "outstanding": "Outstanding!",
+    "greatJob": "Great Job!",
+    "goodEffort": "Good Effort!",
+    "keepPracticing": "Keep Practicing!",
+    "perfect": "🏆 Perfect performance! You've mastered this level!",
+    "excellent": "⭐ Excellent work! Just a few more to master!",
+    "good": "📚 Good progress! Review the missed questions and try again!",
+    "practice": "💡 Don't give up! Review the material and you'll do better next time!",
+    "downloadSummary": "📄 Download Level Summary",
+    "nextLevel": "⬆️ Next Level",
+    "chooseNextTopic": "🎓 Choose Next Topic",
+    "retryThisLevel": "🔄 Retry This Level",
+    "mainMenu": "🏠 Main Menu"
+  },
+
+  "topics": {
+    "machineLearning": "Machine Learning",
+    "linearRegression": "Linear Regression",
+    "logisticRegression": "Logistic Regression",
+    "decisionTrees": "Decision Trees",
+    "supportVectorMachines": "Support Vector Machines",
+    "neuralNetworks": "Neural Networks",
+    "reinforcementLearning": "Reinforcement Learning"
+  },
+
+  "messages": {
+    "noKeys": "🔒 You need {{remaining}} more key(s)! Answer more questions to continue.",
+    "lifeLost": "💔 Life lost! You need {{remaining}} more key(s) to complete this level.",
+    "goalLocked": "🔒 Goal is locked! Complete all quiz questions to unlock.",
+    "questionUnanswered": "Answer all questions to proceed!",
+    "topicSelect": "📚 Choose Your ML Topic",
+    "levelSelect": "{{topic}} - Select Level",
+    "playingLevel": "{{topic}} - Level {{level}}",
+    "collectKeys": "Answer questions, collect keys, reach the goal!"
+  },
+
+  "accessibility": {
+    "closeModal": "Close modal",
+    "openSettings": "Open settings",
+    "openMenu": "Open main menu",
+    "hintUsed": "Hint used",
+    "lifeLost": "Life lost"
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "common": {
+    "close": "Fermer",
+    "continue": "Continuer",
+    "cancel": "Annuler",
+    "save": "Sauvegarder",
+    "back": "Retour",
+    "next": "Suivant",
+    "start": "Commencer",
+    "retry": "Réessayer",
+    "settings": "Paramètres",
+    "menu": "Menu",
+    "language": "Langue",
+    "sound": "Son",
+    "yes": "Oui",
+    "no": "Non",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès"
+  },
+
+  "welcome": {
+    "title": "Bienvenue dans ML Maze Quest !",
+    "subtitle": "Votre Aventure d'Apprentissage du Machine Learning",
+    "enterName": "Entrez le nom de votre personnage :",
+    "placeholder": "Nom du Héros",
+    "hint": "Votre nom courageux pour ce voyage ML",
+    "startJourney": "Commencer l'aventure !"
+  },
+
+  "instructor": {
+    "title": "Rencontrez Votre Guide",
+    "introduction": "\"Bienvenue, {{name}} ! Je suis le Miss Hootsworth, votre guide dans le monde fascinant du Machine Learning !\"",
+    "instructions": {
+      "title": "Instructions du Jeu",
+      "controls": "Utilisez WASD ou les flèches pour naviguer dans le labyrinthe",
+      "objective": "Répondez aux questions de quiz pour collecter des clés et atteindre l'objectif",
+      "topics": "Choisissez parmi différents sujets ML, chacun avec plusieurs niveaux",
+      "lives": "Vous avez 3 vies. Les mauvaises réponses ou niveaux échoués coûtent une vie",
+      "learning": "Du matériel d'étude apparaît avant chaque niveau pour vous aider à apprendre",
+      "progression": "Terminez les niveaux plus faciles pour débloquer les niveaux plus difficiles"
+    },
+    "letsBegin": "Commençons votre aventure d'apprentissage ML !",
+    "skipTutorial": "Ignorer le Tutoriel"
+  },
+
+  "game": {
+    "title": "Quête du Labyrinthe ML",
+    "lives": "Vies",
+    "score": "Score",
+    "keys": "Clés",
+    "topic": "Sujet",
+    "level": "Niveau",
+    "progress": "Progrès"
+  },
+
+  "navigation": {
+    "mainMenu": "Menu Principal",
+    "backToSubjects": "Retour aux Sujets",
+    "backToLevels": "Retour aux Niveaux",
+    "backToMenu": "Retour au Menu",
+    "viewProgress": "Voir le Progrès",
+    "howToPlay": "Comment Jouer",
+    "restartGame": "Redémarrer le Jeu",
+    "continue": "Continuer"
+  },
+
+  "settings": {
+    "title": "Paramètres",
+    "language.label": "Langue :",
+    "characterName": "Nom du Personnage",
+    "editName": "Modifier",
+    "soundEffects": "Effets Sonores",
+    "progress.title": "Votre Progrès",
+    "progress.totalScore": "Score Total",
+    "progress.levelsCompleted": "Niveaux Terminés"
+  },
+
+  "languages": {
+    "en": "Anglais",
+    "es": "Espagnol",
+    "fr": "Français",
+    "hi": "Hindi"
+  },
+
+  "learningContent": {
+    "loading": "Chargement du contenu d'apprentissage...",
+    "error": "Échec du chargement du contenu d'apprentissage. Veuillez réessayer.",
+    "retry": "Réessayer",
+    "skip": "Passer au Quiz",
+    "startQuiz": "Commencer le Quiz"
+  },
+
+  "quiz": {
+    "question": "Question",
+    "submit": "Soumettre la Réponse",
+    "hint": "Indice",
+    "needHint": "💡 Besoin d'un indice ?",
+    "attempts": "Tentatives",
+    "correct": "Correct !",
+    "incorrect": "Incorrect",
+    "explanation": "Explication",
+    "pointsEarned": "+{{points}} points",
+    "tryAgain": "Réessayez la prochaine fois !",
+    "closingIn": "Fermeture dans 3 secondes..."
+  },
+
+  "results": {
+    "levelComplete": "Niveau Terminé !",
+    "outstanding": "Exceptionnel !",
+    "greatJob": "Excellent Travail !",
+    "goodEffort": "Bon Effort !",
+    "keepPracticing": "Continuez à Pratiquer !",
+    "perfect": "🏆 Performance parfaite ! Vous avez maîtrisé ce niveau !",
+    "excellent": "⭐ Travail excellent ! Encore quelques-uns pour maîtriser !",
+    "good": "📚 Bon progrès ! Révisez les questions manquées et réessayez !",
+    "practice": "💡 N'abandonnez pas ! Révisez le matériel, ce sera mieux la prochaine fois !",
+    "downloadSummary": "📄 Télécharger le Résumé du Niveau",
+    "nextLevel": "⬆️ Niveau Suivant",
+    "chooseNextTopic": "🎓 Choisir le Sujet Suivant",
+    "retryThisLevel": "🔄 Réessayer ce Niveau",
+    "mainMenu": "🏠 Menu Principal"
+  },
+
+  "topics": {
+    "machineLearning": "Apprentissage Automatique",
+    "linearRegression": "Régression Linéaire",
+    "logisticRegression": "Régression Logistique",
+    "decisionTrees": "Arbres de Décision",
+    "supportVectorMachines": "Machines à Vecteurs de Support",
+    "neuralNetworks": "Réseaux de Neurones",
+    "reinforcementLearning": "Apprentissage par Renforcement"
+  },
+
+  "messages": {
+    "noKeys": "🔒 Vous avez besoin de {{remaining}} clé(s) de plus ! Répondez à plus de questions pour continuer.",
+    "lifeLost": "💔 Vie perdue ! Vous avez besoin de {{remaining}} clé(s) de plus pour terminer ce niveau.",
+    "goalLocked": "🔒 L'objectif est verrouillé ! Terminez toutes les questions du quiz pour le déverrouiller.",
+    "questionUnanswered": "Répondez à toutes les questions pour continuer.",
+    "topicSelect": "📚 Choisissez Votre Sujet ML",
+    "levelSelect": "{{topic}} - Sélectionner le Niveau",
+    "playingLevel": "{{topic}} - Niveau {{level}}",
+    "collectKeys": "Répondez aux questions, collectez des clés, atteignez l'objectif !"
+  },
+
+  "accessibility": {
+    "closeModal": "Fermer la modale",
+    "openSettings": "Ouvrir les paramètres",
+    "openMenu": "Ouvrir le menu principal",
+    "hintUsed": "Indice utilisé",
+    "lifeLost": "Vie perdue"
+  }
+}
